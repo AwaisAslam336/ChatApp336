@@ -2,13 +2,16 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const helmet = require("helmet");
 const { userRouter } = require("./Routes/User");
 
 const app = express();
 const port = 8000;
 
+app.use(helmet());
 app.use(express.json());
 app.use(cors());
+
 app.use("/api/user", userRouter);
 
 app.listen(port, async () => {
