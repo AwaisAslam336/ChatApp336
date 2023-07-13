@@ -22,6 +22,7 @@ let userSchema = new mongoose.Schema({
     default:
       "https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg",
   },
+  refreshToken: String,
 });
 
 module.exports = mongoose.model("User", userSchema);

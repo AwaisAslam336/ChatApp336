@@ -7,7 +7,7 @@ module.exports = function auth(req, res, next) {
       req.headers.authorization.split(" ")[0] === "Bearer"
     ) {
       let token = req.headers.authorization.split(" ")[1];
-      jwt.verify(token, process.env.TOKEN_SECRET, (err, decoded) => {
+      jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
         if (err) {
           res.status(403).send({ message: err.message });
           return;

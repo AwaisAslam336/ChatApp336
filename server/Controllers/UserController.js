@@ -26,17 +26,18 @@ async function registerUser(req, res) {
       password: encryptedPassword,
     });
 
-    const accessToken = jwt.sign(
-      {
-        data: { username: data.username, email: data.email },
-      },
-      process.env.TOKEN_SECRET,
-      { expiresIn: "15m" }
+    const accessToken = generateAccessToken(data.email, data.username);
+    const refreshToken = generateRefreshToken(data.email);
+
+    await User.findByIdAndUpdate(
+      { _id: data._id },
+      { refreshToken: refreshToken }
     );
 
-    res
-      .status(201)
-      .send({ result: "success", data: { AccessToken: accessToken } });
+    res.status(201).send({
+      result: "success",
+      data: { AccessToken: accessToken, RefreshToken: refreshToken },
+    });
   } catch (error) {
     res.status(500).send({
       Error: "Server Error!",
@@ -64,17 +65,18 @@ async function loginUser(req, res) {
       return res.status(400).send("Email or Password is incorrect.");
     }
 
-    const accessToken = jwt.sign(
-      {
-        data: { username: isUser.username, email: isUser.email },
-      },
-      process.env.TOKEN_SECRET,
-      { expiresIn: "15m" }
+    const accessToken = generateAccessToken(isUser.email, isUser.username);
+    const refreshToken = generateRefreshToken(isUser.email);
+
+    await User.findByIdAndUpdate(
+      { _id: isUser._id },
+      { refreshToken: refreshToken }
     );
 
-    res
-      .status(201)
-      .send({ result: "success", data: { AccessToken: accessToken } });
+    res.status(201).send({
+      result: "success",
+      data: { AccessToken: accessToken, RefreshToken: refreshToken },
+    });
   } catch (error) {
     res.status(500).send({
       Error: "Server Error!",
@@ -82,7 +84,63 @@ async function loginUser(req, res) {
   }
 }
 
+async function getAccessToken(req, res) {
+  const refreshToken = req.body.refreshToken;
+  if (!refreshToken) {
+    return res.status(401).send({ message: "Refresh Token Not Provided." });
+  }
+
+  const isUser = await User.findOne({ refreshToken: refreshToken });
+  if (!isUser) {
+    return res.status(403).send({ message: "Refresh Token is Invalid." });
+  }
+
+  jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).send({ message: "Refresh Token is Invalid." });
+    }
+    const accessToken = generateAccessToken(isUser.email, isUser.username);
+    return res.status(200).send({ accessToken: accessToken });
+  });
+}
+
+async function logoutUser(req, res) {
+  const refreshToken = req.body.refreshToken;
+  if (!refreshToken) {
+    return res
+      .status(400)
+      .send({ message: "Unable to logout, User is missing." });
+  }
+  await User.findOneAndUpdate(
+    { refreshToken: refreshToken },
+    { refreshToken: "" }
+  );
+  return res.status(204).send({ message: "Successfully Loged Out." });
+}
+
+function generateRefreshToken(email) {
+  return jwt.sign(
+    {
+      data: { email: email },
+    },
+    process.env.REFRESH_TOKEN_SECRET,
+    { expiresIn: "30d" }
+  );
+}
+
+function generateAccessToken(email, username) {
+  return jwt.sign(
+    {
+      data: { email: email, username: username },
+    },
+    process.env.ACCESS_TOKEN_SECRET,
+    { expiresIn: "30m" }
+  );
+}
+
 module.exports = {
   registerUser,
   loginUser,
+  getAccessToken,
+  logoutUser,
 };
