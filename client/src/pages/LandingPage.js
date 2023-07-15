@@ -3,7 +3,7 @@ import BasicTabs from "../components/BasicTabs";
 
 function LandingPage() {
   return (
-    <div className="flex flex-row h-screen bg-slate-200 p-[5%] flex-wrap sm:justify-center md:justify-center">
+    <div className="flex flex-row h-100 bg-slate-200 p-[5%] flex-wrap sm:justify-center md:justify-center">
       <div className="grow flex flex-col self-center">
         <h1 className="text-blue-500 font-sans text-[2rem] font-bold self-center">
           Chat App
@@ -12,7 +12,7 @@ function LandingPage() {
           Chat with your friends in real time
         </p>
       </div>
-      <div className="bg-white rounded-md h-[85vh]">
+      <div className="bg-white mt-2 rounded-md h-[100vh]">
         <BasicTabs />
       </div>
     </div>

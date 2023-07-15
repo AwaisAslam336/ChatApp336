@@ -10,6 +10,8 @@ import { AuthContext } from "../AuthContext";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Alert, CircularProgress, Snackbar } from "@mui/material";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 
 // TODO remove, this demo shouldn't need to reset the theme.
 
@@ -29,29 +31,36 @@ export default function LoginComponent() {
     }
     setToast(false);
   };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const userCredentials = {
-      email: data.get("email"),
-      password: data.get("password"),
-    };
-    try {
-      setLoader(true);
-      const result = await axios.post(
-        "http://localhost:8000/api/user/login",
-        userCredentials
-      );
-      setAccessToken(result?.data?.AccessToken);
-      navigate("/chat");
-      setLoader(false);
-    } catch (error) {
-      setLoader(false);
-      setToastMessage(error?.response?.data);
-      setToast(true);
-    }
-  };
+  const formik = useFormik({
+    initialValues: {
+      email: "",
+      password: "",
+    },
+    validationSchema: Yup.object({
+      email: Yup.string().email("Invalid email address").required(),
+      password: Yup.string().required(),
+    }),
+    onSubmit: async (values) => {
+      const userCredentials = {
+        email: values.email,
+        password: values.password,
+      };
+      try {
+        setLoader(true);
+        const result = await axios.post(
+          "http://localhost:8000/api/user/login",
+          userCredentials
+        );
+        setAccessToken(result?.data?.AccessToken);
+        navigate("/chat");
+        setLoader(false);
+      } catch (error) {
+        setLoader(false);
+        setToastMessage(error?.response?.data);
+        setToast(true);
+      }
+    },
+  });
 
   return (
     <ThemeProvider theme={defaultTheme}>
@@ -64,25 +73,41 @@ export default function LoginComponent() {
             alignItems: "center",
           }}
         >
-          <Box component="form" onSubmit={handleSubmit} noValidate>
+          <Box component="form" onSubmit={formik.handleSubmit} noValidate>
             <TextField
               margin="normal"
               required
               fullWidth
+              value={formik.values.email}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               id="email"
               label="Email Address"
               name="email"
-              autoComplete="email"
+              helperText={
+                formik.touched.email && formik.errors.email ? (
+                  <text className="text-red-500">{formik.errors.email}</text>
+                ) : null
+              }
               autoFocus
             />
+
             <TextField
               margin="normal"
               required
               fullWidth
+              value={formik.values.password}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               name="password"
               label="Password"
               type="password"
               id="password"
+              helperText={
+                formik.touched.password && formik.errors.password ? (
+                  <text className="text-red-500">{formik.errors.password}</text>
+                ) : null
+              }
               autoComplete="current-password"
             />
 
@@ -90,6 +115,7 @@ export default function LoginComponent() {
               type="submit"
               fullWidth
               variant="contained"
+              onClick={formik.handleSubmit}
               sx={{ mt: 3, mb: 2 }}
             >
               {loader ? (
