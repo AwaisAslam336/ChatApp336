@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
 const { userRouter } = require("./Routes/User");
 
@@ -11,6 +12,7 @@ const port = 8000;
 app.use(helmet());
 app.use(express.json());
 app.use(cors());
+app.use(cookieParser());
 
 app.use("/api/user", userRouter);
 

@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
-var jwt = require("jsonwebtoken");
+const jwt = require("jsonwebtoken");
 const User = require("../Models/UserModel");
+const dayjs = require("dayjs");
 
 async function registerUser(req, res) {
   try {
@@ -31,12 +32,19 @@ async function registerUser(req, res) {
 
     await User.findByIdAndUpdate(
       { _id: data._id },
-      { refreshToken: refreshToken }
+      { refreshToken: RefreshToken }
     );
+
+    res.cookie("secureCookie", RefreshToken, {
+      secure: process.env.NODE_ENV !== "development",
+      httpOnly: true,
+      sameSite: true,
+      expires: dayjs().add(7, "days").toDate(),
+    });
 
     res.status(201).send({
       result: "success",
-      data: { AccessToken, RefreshToken },
+      data: { AccessToken },
     });
   } catch (error) {
     res.status(500).send({
@@ -70,22 +78,29 @@ async function loginUser(req, res) {
 
     await User.findByIdAndUpdate(
       { _id: isUser._id },
-      { refreshToken: refreshToken }
+      { refreshToken: RefreshToken }
     );
+
+    res.cookie("secureCookie", RefreshToken, {
+      secure: process.env.NODE_ENV !== "development",
+      httpOnly: true,
+      sameSite: true,
+      expires: dayjs().add(7, "days").toDate(),
+    });
 
     res.status(201).send({
       result: "success",
-      data: { AccessToken, RefreshToken },
+      data: { AccessToken },
     });
   } catch (error) {
     res.status(500).send({
-      Error: "Server Error!",
+      Error: error?.message,
     });
   }
 }
 
 async function getAccessToken(req, res) {
-  const refreshToken = req.body.refreshToken;
+  const refreshToken = req.cookies?.secureCookie;
   if (!refreshToken) {
     return res.status(401).send({ message: "Refresh Token Not Provided." });
   }
@@ -107,26 +122,34 @@ async function getAccessToken(req, res) {
 
       await User.findByIdAndUpdate(
         { _id: isUser._id },
-        { refreshToken: refreshToken }
+        { refreshToken: NewRefreshToken }
       );
 
-      return res.status(200).send({ AccessToken, NewRefreshToken });
+      res.cookie("secureCookie", NewRefreshToken, {
+        secure: process.env.NODE_ENV !== "development",
+        httpOnly: true,
+        sameSite: true,
+        expires: dayjs().add(7, "days").toDate(),
+      });
+
+      return res.status(200).send({ AccessToken });
     }
   );
 }
 
 async function logoutUser(req, res) {
-  const refreshToken = req.body.refreshToken;
+  const refreshToken = req.cookies?.secureCookie;
   if (!refreshToken) {
     return res
       .status(400)
-      .send({ message: "Unable to logout, User is missing." });
+      .send({ message: "Unable to logout, User may already loged out." });
   }
+  res.clearCookie("secureCookie");
   await User.findOneAndUpdate(
     { refreshToken: refreshToken },
     { refreshToken: "" }
   );
-  return res.status(204).send({ message: "Successfully Loged Out." });
+  return res.status(204);
 }
 
 function generateRefreshToken(email) {
@@ -135,7 +158,7 @@ function generateRefreshToken(email) {
       data: { email: email },
     },
     process.env.REFRESH_TOKEN_SECRET,
-    { expiresIn: "30d" }
+    { expiresIn: "7d" }
   );
 }
 
@@ -145,7 +168,7 @@ function generateAccessToken(email, username) {
       data: { email: email, username: username },
     },
     process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: "30m" }
+    { expiresIn: "15m" }
   );
 }
 
