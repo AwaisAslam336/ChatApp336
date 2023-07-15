@@ -26,8 +26,8 @@ async function registerUser(req, res) {
       password: encryptedPassword,
     });
 
-    const accessToken = generateAccessToken(data.email, data.username);
-    const refreshToken = generateRefreshToken(data.email);
+    const AccessToken = generateAccessToken(data.email, data.username);
+    const RefreshToken = generateRefreshToken(data.email);
 
     await User.findByIdAndUpdate(
       { _id: data._id },
@@ -36,7 +36,7 @@ async function registerUser(req, res) {
 
     res.status(201).send({
       result: "success",
-      data: { AccessToken: accessToken, RefreshToken: refreshToken },
+      data: { AccessToken, RefreshToken },
     });
   } catch (error) {
     res.status(500).send({
@@ -65,8 +65,8 @@ async function loginUser(req, res) {
       return res.status(400).send("Email or Password is incorrect.");
     }
 
-    const accessToken = generateAccessToken(isUser.email, isUser.username);
-    const refreshToken = generateRefreshToken(isUser.email);
+    const AccessToken = generateAccessToken(isUser.email, isUser.username);
+    const RefreshToken = generateRefreshToken(isUser.email);
 
     await User.findByIdAndUpdate(
       { _id: isUser._id },
@@ -75,7 +75,7 @@ async function loginUser(req, res) {
 
     res.status(201).send({
       result: "success",
-      data: { AccessToken: accessToken, RefreshToken: refreshToken },
+      data: { AccessToken, RefreshToken },
     });
   } catch (error) {
     res.status(500).send({
@@ -95,13 +95,24 @@ async function getAccessToken(req, res) {
     return res.status(403).send({ message: "Refresh Token is Invalid." });
   }
 
-  jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).send({ message: "Refresh Token is Invalid." });
+  jwt.verify(
+    refreshToken,
+    process.env.REFRESH_TOKEN_SECRET,
+    async (err, user) => {
+      if (err) {
+        return res.status(403).send({ message: "Refresh Token is Invalid." });
+      }
+      const AccessToken = generateAccessToken(isUser.email, isUser.username);
+      const NewRefreshToken = generateRefreshToken(isUser.email);
+
+      await User.findByIdAndUpdate(
+        { _id: isUser._id },
+        { refreshToken: refreshToken }
+      );
+
+      return res.status(200).send({ AccessToken, NewRefreshToken });
     }
-    const accessToken = generateAccessToken(isUser.email, isUser.username);
-    return res.status(200).send({ accessToken: accessToken });
-  });
+  );
 }
 
 async function logoutUser(req, res) {
