@@ -10,13 +10,13 @@ async function registerUser(req, res) {
     const password = req.body.password;
 
     if (!email || !password) {
-      res.status(400).send({ message: "Both Email and Password Required!" });
+      res.status(400).send("Both Email and Password Required!");
       return;
     }
 
     const isUser = await User.findOne({ email: email });
     if (isUser) {
-      res.status(400).send({ message: "Email must be unique!" });
+      res.status(400).send("Email must be unique!");
       return;
     }
 
@@ -30,11 +30,6 @@ async function registerUser(req, res) {
     const AccessToken = generateAccessToken(data.email, data.username);
     const RefreshToken = generateRefreshToken(data.email);
 
-    await User.findByIdAndUpdate(
-      { _id: data._id },
-      { refreshToken: RefreshToken }
-    );
-
     res.cookie("secureCookie", RefreshToken, {
       secure: process.env.NODE_ENV !== "development",
       httpOnly: true,
@@ -44,12 +39,15 @@ async function registerUser(req, res) {
 
     res.status(201).send({
       result: "success",
-      data: { AccessToken },
+      AccessToken,
     });
+
+    await User.findByIdAndUpdate(
+      { _id: data._id },
+      { refreshToken: RefreshToken }
+    );
   } catch (error) {
-    res.status(500).send({
-      Error: "Server Error!",
-    });
+    res.status(500).send(error?.message);
   }
 }
 async function loginUser(req, res) {
@@ -57,15 +55,13 @@ async function loginUser(req, res) {
     const email = req.body.email;
     const password = req.body.password;
     if (!email || !password) {
-      res.status(400).send({ message: "Both Email and Password Required." });
+      res.status(400).send("Both Email and Password Required.");
       return;
     }
 
     const isUser = await User.findOne({ email: email });
     if (!isUser) {
-      return res
-        .status(400)
-        .send({ message: "Email or Password is incorrect." });
+      return res.status(400).send("Email or Password is incorrect.");
     }
 
     const validPassword = await bcrypt.compare(password, isUser.password);
@@ -76,11 +72,6 @@ async function loginUser(req, res) {
     const AccessToken = generateAccessToken(isUser.email, isUser.username);
     const RefreshToken = generateRefreshToken(isUser.email);
 
-    await User.findByIdAndUpdate(
-      { _id: isUser._id },
-      { refreshToken: RefreshToken }
-    );
-
     res.cookie("secureCookie", RefreshToken, {
       secure: process.env.NODE_ENV !== "development",
       httpOnly: true,
@@ -90,12 +81,15 @@ async function loginUser(req, res) {
 
     res.status(201).send({
       result: "success",
-      data: { AccessToken },
+      AccessToken,
     });
+
+    await User.findByIdAndUpdate(
+      { _id: isUser._id },
+      { refreshToken: RefreshToken }
+    );
   } catch (error) {
-    res.status(500).send({
-      Error: error?.message,
-    });
+    res.status(500).send(error?.message);
   }
 }
 
@@ -120,11 +114,6 @@ async function getAccessToken(req, res) {
       const AccessToken = generateAccessToken(isUser.email, isUser.username);
       const NewRefreshToken = generateRefreshToken(isUser.email);
 
-      await User.findByIdAndUpdate(
-        { _id: isUser._id },
-        { refreshToken: NewRefreshToken }
-      );
-
       res.cookie("secureCookie", NewRefreshToken, {
         secure: process.env.NODE_ENV !== "development",
         httpOnly: true,
@@ -132,7 +121,15 @@ async function getAccessToken(req, res) {
         expires: dayjs().add(7, "days").toDate(),
       });
 
-      return res.status(200).send({ AccessToken });
+      res.status(201).send({
+        result: "success",
+        AccessToken,
+      });
+
+      await User.findByIdAndUpdate(
+        { _id: isUser._id },
+        { refreshToken: NewRefreshToken }
+      );
     }
   );
 }

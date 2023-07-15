@@ -6,19 +6,51 @@ import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
+import { AuthContext } from "../AuthContext";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { Alert, CircularProgress, Snackbar } from "@mui/material";
 
 // TODO remove, this demo shouldn't need to reset the theme.
 
 const defaultTheme = createTheme();
 
 export default function LoginComponent() {
-  const handleSubmit = (event) => {
+  const { setAccessToken } = React.useContext(AuthContext);
+  const [loader, setLoader] = React.useState(false);
+  const [toast, setToast] = React.useState(false);
+  const [toastMessage, setToastMessage] = React.useState();
+  const navigate = useNavigate();
+
+  //close toast by clicking away
+  const handleClose = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setToast(false);
+  };
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    console.log({
+    const userCredentials = {
       email: data.get("email"),
       password: data.get("password"),
-    });
+    };
+    try {
+      setLoader(true);
+      const result = await axios.post(
+        "http://localhost:8000/api/user/login",
+        userCredentials
+      );
+      setAccessToken(result?.data?.AccessToken);
+      navigate("/chat");
+      setLoader(false);
+    } catch (error) {
+      setLoader(false);
+      setToastMessage(error?.response?.data);
+      setToast(true);
+    }
   };
 
   return (
@@ -60,7 +92,11 @@ export default function LoginComponent() {
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
             >
-              Sign In
+              {loader ? (
+                <CircularProgress color="inherit" size={"1.5rem"} />
+              ) : (
+                "Sign In"
+              )}
             </Button>
             <Grid container justifyContent={"center"}>
               <Link href="#" variant="body2">
@@ -69,6 +105,11 @@ export default function LoginComponent() {
             </Grid>
           </Box>
         </Box>
+        <Snackbar open={toast} autoHideDuration={3000} onClose={handleClose}>
+          <Alert onClose={handleClose} severity="error" sx={{ width: "100%" }}>
+            {toastMessage}
+          </Alert>
+        </Snackbar>
       </Container>
     </ThemeProvider>
   );

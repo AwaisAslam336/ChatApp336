@@ -6,19 +6,58 @@ import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
+import { AuthContext } from "../AuthContext";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { Alert, CircularProgress, Snackbar } from "@mui/material";
 
 // TODO remove, this demo shouldn't need to reset the theme.
 
 const defaultTheme = createTheme();
 
 export default function SignUpComponent() {
-  const handleSubmit = (event) => {
+  const { setAccessToken } = React.useContext(AuthContext);
+  const [loader, setLoader] = React.useState(false);
+  const [toast, setToast] = React.useState(false);
+  const [toastMessage, setToastMessage] = React.useState();
+  const navigate = useNavigate();
+
+  //close toast by clicking away
+  const handleClose = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setToast(false);
+  };
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    console.log({
+
+    if (data.get("password") !== data.get("confirmPassword")) {
+      setToastMessage("Confirm Password does not match.");
+      setToast(true);
+      return;
+    }
+    const userCredentials = {
+      username: data.get("username"),
       email: data.get("email"),
       password: data.get("password"),
-    });
+    };
+    try {
+      setLoader(true);
+      const result = await axios.post(
+        "http://localhost:8000/api/user/register",
+        userCredentials
+      );
+      setAccessToken(result?.data?.AccessToken);
+      navigate("/chat");
+      setLoader(false);
+    } catch (error) {
+      setLoader(false);
+      setToastMessage(error?.response?.data);
+      setToast(true);
+    }
   };
 
   return (
@@ -80,7 +119,11 @@ export default function SignUpComponent() {
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
             >
-              Sign In
+              {loader ? (
+                <CircularProgress color="inherit" size={"1.5rem"} />
+              ) : (
+                "Sign Up"
+              )}
             </Button>
             <Grid container justifyContent={"center"}>
               <Link href="#" variant="body2">
@@ -89,6 +132,11 @@ export default function SignUpComponent() {
             </Grid>
           </Box>
         </Box>
+        <Snackbar open={toast} autoHideDuration={3000} onClose={handleClose}>
+          <Alert onClose={handleClose} severity="error" sx={{ width: "100%" }}>
+            {toastMessage}
+          </Alert>
+        </Snackbar>
       </Container>
     </ThemeProvider>
   );
