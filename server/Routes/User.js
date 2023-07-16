@@ -9,7 +9,7 @@ let {
 
 userRouter.post("/register", registerUser);
 userRouter.post("/login", loginUser);
-userRouter.post("/token", getAccessToken);
-userRouter.delete("/logout", logoutUser);
+userRouter.get("/token", getAccessToken);
+userRouter.get("/logout", logoutUser);
 
 module.exports = { userRouter };

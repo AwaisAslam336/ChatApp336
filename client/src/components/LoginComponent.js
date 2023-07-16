@@ -24,7 +24,7 @@ export default function LoginComponent() {
   const [toastMessage, setToastMessage] = React.useState();
   const navigate = useNavigate();
 
-  //close toast by clicking away
+  //close toast
   const handleClose = (event, reason) => {
     if (reason === "clickaway") {
       return;
@@ -49,14 +49,17 @@ export default function LoginComponent() {
         setLoader(true);
         const result = await axios.post(
           "http://localhost:8000/api/user/login",
-          userCredentials
+          userCredentials,
+          { withCredentials: true }
         );
         setAccessToken(result?.data?.AccessToken);
         navigate("/chat");
         setLoader(false);
       } catch (error) {
+        console.log(error.message);
         setLoader(false);
-        setToastMessage(error?.response?.data);
+        error?.message && setToastMessage(error.message);
+        error?.response?.data && setToastMessage(error?.response?.data);
         setToast(true);
       }
     },

@@ -139,14 +139,14 @@ async function logoutUser(req, res) {
   if (!refreshToken) {
     return res
       .status(400)
-      .send({ message: "Unable to logout, User may already loged out." });
+      .send("Unable to logout, User may already loged out.");
   }
   res.clearCookie("secureCookie");
   await User.findOneAndUpdate(
     { refreshToken: refreshToken },
     { refreshToken: "" }
   );
-  return res.status(204);
+  return res.status(200).send("User Loged Out.");
 }
 
 function generateRefreshToken(email) {
@@ -165,7 +165,7 @@ function generateAccessToken(email, username) {
       data: { email: email, username: username },
     },
     process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: "15m" }
+    { expiresIn: "15s" }
   );
 }
 
