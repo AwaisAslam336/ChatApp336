@@ -52,6 +52,10 @@ export default function LoginComponent() {
           userCredentials,
           { withCredentials: true }
         );
+        window.localStorage.setItem(
+          "userInfo",
+          JSON.stringify(result?.data?.data)
+        );
         setAccessToken(result?.data?.AccessToken);
         navigate("/chat");
         setLoader(false);

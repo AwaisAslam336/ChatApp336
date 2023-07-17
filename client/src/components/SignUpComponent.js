@@ -59,6 +59,7 @@ export default function SignUpComponent() {
           "http://localhost:8000/api/user/register",
           userCredentials
         );
+        localStorage.setItem("userInfo", result?.data?.data);
         setAccessToken(result?.data?.AccessToken);
         navigate("/chat");
         setLoader(false);

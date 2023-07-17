@@ -27,7 +27,7 @@ async function registerUser(req, res) {
       password: encryptedPassword,
     });
 
-    const AccessToken = generateAccessToken(data.email, data.username);
+    const AccessToken = generateAccessToken(data.email);
     const RefreshToken = generateRefreshToken(data.email);
 
     res.cookie("secureCookie", RefreshToken, {
@@ -39,6 +39,7 @@ async function registerUser(req, res) {
 
     res.status(201).send({
       result: "success",
+      data: { email: data.email, username: data.username },
       AccessToken,
     });
 
@@ -81,6 +82,7 @@ async function loginUser(req, res) {
 
     res.status(201).send({
       result: "success",
+      data: { email: isUser.email, username: isUser.username, pic: isUser.pic },
       AccessToken,
     });
 
@@ -111,7 +113,7 @@ async function getAccessToken(req, res) {
       if (err) {
         return res.status(403).send({ message: "Refresh Token is Invalid." });
       }
-      const AccessToken = generateAccessToken(isUser.email, isUser.username);
+      const AccessToken = generateAccessToken(isUser.email);
       const NewRefreshToken = generateRefreshToken(isUser.email);
 
       res.cookie("secureCookie", NewRefreshToken, {
@@ -159,13 +161,13 @@ function generateRefreshToken(email) {
   );
 }
 
-function generateAccessToken(email, username) {
+function generateAccessToken(email) {
   return jwt.sign(
     {
-      data: { email: email, username: username },
+      data: { email: email },
     },
     process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: "15s" }
+    { expiresIn: "5m" }
   );
 }
 

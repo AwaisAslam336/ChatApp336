@@ -74,6 +74,11 @@ export default function PrimarySearchAppBar(props) {
     setAnchorEl(null);
     handleMobileMenuClose();
   };
+  const handleProfileClose = () => {
+    props.handleProfile();
+    setAnchorEl(null);
+    handleMobileMenuClose();
+  };
 
   const handleLogoutClose = () => {
     props.handleLogout();
@@ -102,7 +107,7 @@ export default function PrimarySearchAppBar(props) {
       open={isMenuOpen}
       onClose={handleMenuClose}
     >
-      <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
+      <MenuItem onClick={handleProfileClose}>Profile</MenuItem>
       <MenuItem onClick={handleLogoutClose}>Logout</MenuItem>
     </Menu>
   );
