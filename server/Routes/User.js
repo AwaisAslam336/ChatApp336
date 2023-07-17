@@ -5,11 +5,13 @@ let {
   loginUser,
   getAccessToken,
   logoutUser,
+  uploadProfilePicture,
 } = require("../Controllers/UserController");
 
 userRouter.post("/register", registerUser);
 userRouter.post("/login", loginUser);
 userRouter.get("/token", getAccessToken);
 userRouter.get("/logout", logoutUser);
+userRouter.get("/pic", uploadProfilePicture);
 
 module.exports = { userRouter };
