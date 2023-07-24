@@ -65,41 +65,14 @@ export default function SignUpComponent() {
         setLoader(false);
       } catch (error) {
         setLoader(false);
-        setToastMessage(error?.response?.data);
+        error?.message && setToastMessage(error.message);
+        error?.response?.data && setToastMessage(error?.response?.data);
+        error?.response?.statusText &&
+          setToastMessage(error?.response?.statusText);
         setToast(true);
       }
     },
   });
-
-  // const handleSubmit = async (event) => {
-  //   event.preventDefault();
-  //   const data = new FormData(event.currentTarget);
-
-  //   if (data.get("password") !== data.get("confirmPassword")) {
-  //     setToastMessage("Confirm Password does not match.");
-  //     setToast(true);
-  //     return;
-  //   }
-  //   const userCredentials = {
-  //     username: data.get("username"),
-  //     email: data.get("email"),
-  //     password: data.get("password"),
-  //   };
-  //   try {
-  //     setLoader(true);
-  //     const result = await axios.post(
-  //       "http://localhost:8000/api/user/register",
-  //       userCredentials
-  //     );
-  //     setAccessToken(result?.data?.AccessToken);
-  //     navigate("/chat");
-  //     setLoader(false);
-  //   } catch (error) {
-  //     setLoader(false);
-  //     setToastMessage(error?.response?.data);
-  //     setToast(true);
-  //   }
-  // };
 
   return (
     <ThemeProvider theme={defaultTheme}>
@@ -195,6 +168,7 @@ export default function SignUpComponent() {
               onClick={formik.handleSubmit}
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
+              disabled={loader}
             >
               {loader ? (
                 <CircularProgress color="inherit" size={"1.5rem"} />

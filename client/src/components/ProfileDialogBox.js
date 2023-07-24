@@ -8,15 +8,15 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
 import { Avatar, Box } from "@mui/material";
 
-export default function ProfileDialogBox({ handleClose, open }) {
+export default function ProfileDialogBox({
+  handleClose,
+  open,
+  handlePictureUpload,
+  setImg,
+}) {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
   const userInfo = JSON.parse(window.localStorage.getItem("userInfo"));
-  const [img, setImg] = React.useState();
-
-  const handlePictureUpload = () => {
-    console.log(img);
-  };
 
   return (
     <div>

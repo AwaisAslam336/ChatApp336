@@ -11,6 +11,7 @@ const port = 8000;
 
 app.use(helmet());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 const corsOptions = {
@@ -22,10 +23,6 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 app.use("/api/user", userRouter);
-
-app.get("/", require("./Middlewares/auth"), (req, res) =>
-  res.send("Top Secret Page!!!!!")
-);
 
 app.listen(port, async () => {
   try {

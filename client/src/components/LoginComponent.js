@@ -60,10 +60,11 @@ export default function LoginComponent() {
         navigate("/chat");
         setLoader(false);
       } catch (error) {
-        console.log(error.message);
         setLoader(false);
         error?.message && setToastMessage(error.message);
         error?.response?.data && setToastMessage(error?.response?.data);
+        error?.response?.statusText &&
+          setToastMessage(error?.response?.statusText);
         setToast(true);
       }
     },
@@ -124,6 +125,7 @@ export default function LoginComponent() {
               variant="contained"
               onClick={formik.handleSubmit}
               sx={{ mt: 3, mb: 2 }}
+              disabled={loader}
             >
               {loader ? (
                 <CircularProgress color="inherit" size={"1.5rem"} />

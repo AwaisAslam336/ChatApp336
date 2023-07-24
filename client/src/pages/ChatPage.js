@@ -5,6 +5,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import ProfileDialogBox from "../components/ProfileDialogBox";
 import { Alert, Snackbar } from "@mui/material";
+import FormData from "form-data";
 
 function ChatPage() {
   const { accessToken, setAccessToken } = React.useContext(AuthContext);
@@ -12,29 +13,13 @@ function ChatPage() {
   const [toastMessage, setToastMessage] = React.useState();
   const [toast, setToast] = React.useState(false);
   const [openDialog, setOpenDialog] = React.useState(false);
+  const [img, setImg] = React.useState();
   const navigate = useNavigate();
 
   useEffect(() => {
-    /* handling accessToken after page refresh ---
-     --- access authorized_routes & if accessToken is
-     not there; get new accessToken */
-    const getSecretPage = () => {
-      if (accessToken) {
-        const configuration = {
-          method: "get",
-          url: `http://localhost:8000/`,
-          headers: { Authorization: "Bearer " + accessToken },
-        };
-        // make the API call
-        axios(configuration)
-          .then((result) => {
-            setSecret(result?.data);
-          })
-          .catch((error) => {
-            setToastMessage(error?.response?.data);
-            setToast(true);
-          });
-      } else {
+    /* handling accessToken after page refresh */
+    const getNewAccessToken = () => {
+      if (!accessToken) {
         axios
           .get("http://localhost:8000/api/user/token", {
             withCredentials: true,
@@ -50,9 +35,9 @@ function ChatPage() {
     };
 
     return () => {
-      getSecretPage();
+      getNewAccessToken();
     };
-  }, [accessToken]);
+  }, []);
 
   //close toast
   const handleClose = (event, reason) => {
@@ -82,6 +67,22 @@ function ChatPage() {
   const handleProfileClose = () => {
     setOpenDialog(false);
   };
+  const handlePictureUpload = async () => {
+    if (img && accessToken) {
+      try {
+        let data = new FormData();
+        data.append("img", img);
+        await axios({
+          method: "post",
+          url: "http://localhost:8000/api/user/pic",
+          data: data,
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      } catch (error) {
+        console.log(error);
+      }
+    }
+  };
 
   return (
     <div className="bg-slate-200 h-screen">
@@ -95,7 +96,12 @@ function ChatPage() {
           {toastMessage}
         </Alert>
       </Snackbar>
-      <ProfileDialogBox handleClose={handleProfileClose} open={openDialog} />
+      <ProfileDialogBox
+        handleClose={handleProfileClose}
+        open={openDialog}
+        handlePictureUpload={handlePictureUpload}
+        setImg={setImg}
+      />
     </div>
   );
 }

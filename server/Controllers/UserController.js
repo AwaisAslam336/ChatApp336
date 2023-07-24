@@ -171,10 +171,9 @@ function generateAccessToken(email) {
   );
 }
 
-function uploadProfilePicture(req, res) {
-  const { file } = req;
-  console.log(file);
-}
+const uploadProfilePicture = (req, res) => {
+  console.log(req.file);
+};
 
 module.exports = {
   registerUser,
