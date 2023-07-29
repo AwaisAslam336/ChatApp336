@@ -57,18 +57,22 @@ export default function SignUpComponent() {
         setLoader(true);
         const result = await axios.post(
           "http://localhost:8000/api/user/register",
-          userCredentials
+          userCredentials,
+          { withCredentials: true }
         );
-        localStorage.setItem("userInfo", result?.data?.data);
+        window.localStorage.setItem(
+          "userInfo",
+          JSON.stringify(result?.data?.data)
+        );
         setAccessToken(result?.data?.AccessToken);
         navigate("/chat");
         setLoader(false);
       } catch (error) {
         setLoader(false);
         error?.message && setToastMessage(error.message);
-        error?.response?.data && setToastMessage(error?.response?.data);
         error?.response?.statusText &&
           setToastMessage(error?.response?.statusText);
+        error?.response?.data && setToastMessage(error?.response?.data);
         setToast(true);
       }
     },

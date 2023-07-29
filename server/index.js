@@ -8,11 +8,16 @@ const { userRouter } = require("./Routes/User");
 
 const app = express();
 const port = 8000;
-
-app.use(helmet());
+let boolValue = process.env.HELMET_CROSS_ORIGIN === "true";
+app.use(
+  helmet({
+    crossOriginResourcePolicy: boolValue,
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(express.static(__dirname + "/public/images"));
 
 const corsOptions = {
   origin: "http://localhost:3000",

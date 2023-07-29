@@ -5,15 +5,12 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import ProfileDialogBox from "../components/ProfileDialogBox";
 import { Alert, Snackbar } from "@mui/material";
-import FormData from "form-data";
 
 function ChatPage() {
   const { accessToken, setAccessToken } = React.useContext(AuthContext);
-  const [secret, setSecret] = useState("");
   const [toastMessage, setToastMessage] = React.useState();
   const [toast, setToast] = React.useState(false);
   const [openDialog, setOpenDialog] = React.useState(false);
-  const [img, setImg] = React.useState();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -67,22 +64,6 @@ function ChatPage() {
   const handleProfileClose = () => {
     setOpenDialog(false);
   };
-  const handlePictureUpload = async () => {
-    if (img && accessToken) {
-      try {
-        let data = new FormData();
-        data.append("img", img);
-        await axios({
-          method: "post",
-          url: "http://localhost:8000/api/user/pic",
-          data: data,
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-      } catch (error) {
-        console.log(error);
-      }
-    }
-  };
 
   return (
     <div className="bg-slate-200 h-screen">
@@ -90,18 +71,13 @@ function ChatPage() {
         handleLogout={logout}
         handleProfile={handleUserProfile}
       />
-      {secret}
+
       <Snackbar open={toast} autoHideDuration={3000} onClose={handleClose}>
         <Alert onClose={handleClose} severity="error" sx={{ width: "100%" }}>
           {toastMessage}
         </Alert>
       </Snackbar>
-      <ProfileDialogBox
-        handleClose={handleProfileClose}
-        open={openDialog}
-        handlePictureUpload={handlePictureUpload}
-        setImg={setImg}
-      />
+      <ProfileDialogBox handleClose={handleProfileClose} open={openDialog} />
     </div>
   );
 }

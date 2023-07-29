@@ -167,12 +167,23 @@ function generateAccessToken(email) {
       data: { email: email },
     },
     process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: "5m" }
+    { expiresIn: "1h" }
   );
 }
 
-const uploadProfilePicture = (req, res) => {
-  console.log(req.file);
+const uploadProfilePicture = async (req, res) => {
+  const filename = req.file?.filename;
+  const email = req.user?.data?.email;
+  if (filename && email) {
+    try {
+      await User.findOneAndUpdate({ email }, { pic: filename });
+      res.status(200).send({ img: filename });
+    } catch (error) {
+      res.status(500).send({ Error: error?.message });
+    }
+  } else {
+    res.status(400).send({ message: "Image Failed to Upload." });
+  }
 };
 
 module.exports = {
