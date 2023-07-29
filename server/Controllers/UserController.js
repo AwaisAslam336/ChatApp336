@@ -2,7 +2,8 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../Models/UserModel");
 const dayjs = require("dayjs");
-
+const fs = require("fs");
+const path = require("path");
 async function registerUser(req, res) {
   try {
     const username = req.body.username;
@@ -176,7 +177,15 @@ const uploadProfilePicture = async (req, res) => {
   const email = req.user?.data?.email;
   if (filename && email) {
     try {
-      await User.findOneAndUpdate({ email }, { pic: filename });
+      const user = await User.findOneAndUpdate({ email }, { pic: filename });
+      fs.unlink(
+        path.join(__dirname, "../public/images/") + user.pic,
+        function (err) {
+          if (err) {
+            console.log("image not deleted");
+          }
+        }
+      );
       res.status(200).send({ img: filename });
     } catch (error) {
       res.status(500).send({ Error: error?.message });
