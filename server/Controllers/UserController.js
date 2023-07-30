@@ -199,9 +199,13 @@ const searchUsers = async (req, res) => {
   try {
     const searchQuery = req.query?.search;
     if (typeof searchQuery === "string") {
-      const result = await User.find({ username: searchQuery }, "-password", {
-        limit: 10,
-      });
+      const result = await User.find(
+        { username: searchQuery },
+        "-password -refreshToken -_id",
+        {
+          limit: 10,
+        }
+      );
       res.status(200).send(result);
     } else {
       res.status(400).send("Invalid Search.");

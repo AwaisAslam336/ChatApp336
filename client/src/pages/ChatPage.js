@@ -4,7 +4,7 @@ import { AuthContext } from "../AuthContext";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import ProfileDialogBox from "../components/ProfileDialogBox";
-import { Alert, Snackbar } from "@mui/material";
+import { Alert, Avatar, Box, DialogTitle, Snackbar } from "@mui/material";
 
 function ChatPage() {
   const { accessToken, setAccessToken } = React.useContext(AuthContext);
@@ -71,6 +71,23 @@ function ChatPage() {
         handleLogout={logout}
         handleProfile={handleUserProfile}
       />
+      <Box className="flex flex-row">
+        <Box className="basis-1/4">
+          <Box className="flex items-center rounded-md bg bg-slate-300  pl-3">
+            <Avatar
+              alt="Profile Picture"
+              src={``}
+              sx={{ width: 46, height: 46 }}
+            />
+            <DialogTitle
+              className="text-black-600"
+              id="responsive-dialog-title"
+            >
+              Hello
+            </DialogTitle>
+          </Box>
+        </Box>
+      </Box>
 
       <Snackbar open={toast} autoHideDuration={3000} onClose={handleClose}>
         <Alert onClose={handleClose} severity="error" sx={{ width: "100%" }}>

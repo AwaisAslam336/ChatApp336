@@ -14,6 +14,9 @@ import AccountCircle from "@mui/icons-material/AccountCircle";
 import MailIcon from "@mui/icons-material/Mail";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import MoreIcon from "@mui/icons-material/MoreVert";
+import SearchDialog from "./SearchDialogBox";
+import axios from "axios";
+import { AuthContext } from "../AuthContext";
 
 const Search = styled("div")(({ theme }) => ({
   position: "relative",
@@ -58,6 +61,10 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 export default function PrimarySearchAppBar(props) {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = React.useState(null);
+  const [searchValue, setSearchValue] = React.useState();
+  const [openSearchDialog, setOpenSearchDialog] = React.useState(false);
+  const [users, setUsers] = React.useState();
+  const { accessToken } = React.useContext(AuthContext);
 
   const isMenuOpen = Boolean(anchorEl);
   const isMobileMenuOpen = Boolean(mobileMoreAnchorEl);
@@ -88,6 +95,33 @@ export default function PrimarySearchAppBar(props) {
 
   const handleMobileMenuOpen = (event) => {
     setMobileMoreAnchorEl(event.currentTarget);
+  };
+
+  const handleSearchDialogOpen = () => {
+    setOpenSearchDialog(true);
+  };
+
+  const handleSearchDialogClose = () => {
+    setOpenSearchDialog(false);
+  };
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (accessToken && searchValue) {
+      try {
+        const result = await axios.get(
+          `http://localhost:8000/api/user?search=${searchValue}`,
+          { headers: { Authorization: `Bearer ${accessToken}` } },
+          { withCredentials: true }
+        );
+        setUsers(result.data);
+        handleSearchDialogOpen();
+      } catch (error) {
+        console.log(error);
+      }
+    } else {
+      console.log("error here");
+    }
   };
 
   const menuId = "primary-search-account-menu";
@@ -180,11 +214,19 @@ export default function PrimarySearchAppBar(props) {
             <SearchIconWrapper>
               <SearchIcon />
             </SearchIconWrapper>
-            <StyledInputBase
-              placeholder="Search for friends…"
-              inputProps={{ "aria-label": "search" }}
-            />
+            <form onSubmit={handleSearch}>
+              <StyledInputBase
+                placeholder="Search for friends…"
+                inputProps={{ "aria-label": "search" }}
+                onChange={(e) => setSearchValue(e.target.value)}
+              />
+            </form>
           </Search>
+          <SearchDialog
+            open={openSearchDialog}
+            handleClose={handleSearchDialogClose}
+            users={users}
+          />
           <Box sx={{ flexGrow: 1 }} />
           <Box sx={{ display: { xs: "none", md: "flex" } }}>
             <IconButton

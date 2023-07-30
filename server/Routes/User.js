@@ -22,11 +22,11 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
+userRouter.get("/", auth, searchUsers);
 userRouter.post("/register", registerUser);
 userRouter.post("/login", loginUser);
 userRouter.get("/token", getAccessToken);
 userRouter.get("/logout", logoutUser);
 userRouter.post("/img", auth, upload.single("img"), uploadProfilePicture);
-userRouter.post("/search", auth, searchUsers);
 
 module.exports = { userRouter };
