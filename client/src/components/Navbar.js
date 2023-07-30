@@ -105,6 +105,25 @@ export default function PrimarySearchAppBar(props) {
     setOpenSearchDialog(false);
   };
 
+  const handleSelectedSearchUser = async (user) => {
+    handleSearchDialogClose();
+    const currentUser = JSON.parse(window.localStorage.getItem("userInfo"));
+    if (accessToken && user.email && currentUser.email) {
+      try {
+        await axios.post(
+          `http://localhost:8000/api/conversation/create`,
+          [currentUser.email, user.email],
+          { headers: { Authorization: `Bearer ${accessToken}` } },
+          { withCredentials: true }
+        );
+      } catch (error) {
+        console.log(error);
+      }
+    } else {
+      console.log("error here");
+    }
+  };
+
   const handleSearch = async (e) => {
     e.preventDefault();
     if (accessToken && searchValue) {
@@ -226,6 +245,7 @@ export default function PrimarySearchAppBar(props) {
             open={openSearchDialog}
             handleClose={handleSearchDialogClose}
             users={users}
+            handleSelectedUser={handleSelectedSearchUser}
           />
           <Box sx={{ flexGrow: 1 }} />
           <Box sx={{ display: { xs: "none", md: "flex" } }}>

@@ -17,10 +17,12 @@ const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
-export default function SearchDialog({ open, handleClose, users }) {
-  const handleSelectedSearchUser = (user) => {
-    //console.log(user);
-  };
+export default function SearchDialog({
+  open,
+  handleClose,
+  users,
+  handleSelectedUser,
+}) {
   return (
     <div>
       <Dialog
@@ -48,7 +50,7 @@ export default function SearchDialog({ open, handleClose, users }) {
           {Array.isArray(users) &&
             users.map((user) => {
               return (
-                <ListItemButton onClick={() => handleSelectedSearchUser(user)}>
+                <ListItemButton onClick={() => handleSelectedUser(user)}>
                   <Avatar
                     alt="Profile Picture"
                     src={`http://localhost:8000/${user.pic}`}

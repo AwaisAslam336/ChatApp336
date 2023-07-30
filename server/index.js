@@ -5,6 +5,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
 const { userRouter } = require("./Routes/User");
+const { conversationRouter } = require("./Routes/conversation");
 
 const app = express();
 const port = 8000;
@@ -28,6 +29,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 app.use("/api/user", userRouter);
+app.use("/api/conversation", conversationRouter);
 
 app.listen(port, async () => {
   try {
