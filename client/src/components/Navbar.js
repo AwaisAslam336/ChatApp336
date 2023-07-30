@@ -17,6 +17,7 @@ import MoreIcon from "@mui/icons-material/MoreVert";
 import SearchDialog from "./SearchDialogBox";
 import axios from "axios";
 import { AuthContext } from "../AuthContext";
+import { Alert, CircularProgress, Snackbar } from "@mui/material";
 
 const Search = styled("div")(({ theme }) => ({
   position: "relative",
@@ -65,9 +66,20 @@ export default function PrimarySearchAppBar(props) {
   const [openSearchDialog, setOpenSearchDialog] = React.useState(false);
   const [users, setUsers] = React.useState();
   const { accessToken } = React.useContext(AuthContext);
+  const [loader, setLoader] = React.useState(false);
+  const [toast, setToast] = React.useState(false);
+  const [toastMessage, setToastMessage] = React.useState();
+  const [severity, setSeverity] = React.useState("error");
 
   const isMenuOpen = Boolean(anchorEl);
   const isMobileMenuOpen = Boolean(mobileMoreAnchorEl);
+
+  const handleSnackBarClose = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setToast(false);
+  };
 
   const handleProfileMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -116,11 +128,21 @@ export default function PrimarySearchAppBar(props) {
           { headers: { Authorization: `Bearer ${accessToken}` } },
           { withCredentials: true }
         );
+        setToastMessage("Conversation Created.");
+        setSeverity("success");
+        setToast(true);
       } catch (error) {
-        console.log(error);
+        error?.message && setToastMessage(error.message);
+        error?.response?.statusText &&
+          setToastMessage(error?.response?.statusText);
+        error?.response?.data && setToastMessage(error?.response?.data);
+        setSeverity("error");
+        setToast(true);
       }
     } else {
-      console.log("error here");
+      setToastMessage("Unable to create conversation.");
+      setSeverity("error");
+      setToast(true);
     }
   };
 
@@ -128,6 +150,7 @@ export default function PrimarySearchAppBar(props) {
     e.preventDefault();
     if (accessToken && searchValue) {
       try {
+        setLoader(true);
         const result = await axios.get(
           `http://localhost:8000/api/user?search=${searchValue}`,
           { headers: { Authorization: `Bearer ${accessToken}` } },
@@ -135,11 +158,20 @@ export default function PrimarySearchAppBar(props) {
         );
         setUsers(result.data);
         handleSearchDialogOpen();
+        setLoader(false);
       } catch (error) {
-        console.log(error);
+        setLoader(false);
+        error?.message && setToastMessage(error.message);
+        error?.response?.statusText &&
+          setToastMessage(error?.response?.statusText);
+        error?.response?.data && setToastMessage(error?.response?.data);
+        setSeverity("error");
+        setToast(true);
       }
     } else {
-      console.log("error here");
+      setToastMessage("Unable to search user.");
+      setSeverity("error");
+      setToast(true);
     }
   };
 
@@ -231,7 +263,11 @@ export default function PrimarySearchAppBar(props) {
           </Typography>
           <Search>
             <SearchIconWrapper>
-              <SearchIcon />
+              {loader ? (
+                <CircularProgress color="inherit" size={"1rem"} />
+              ) : (
+                <SearchIcon />
+              )}
             </SearchIconWrapper>
             <form onSubmit={handleSearch}>
               <StyledInputBase
@@ -295,6 +331,19 @@ export default function PrimarySearchAppBar(props) {
       </AppBar>
       {renderMobileMenu}
       {renderMenu}
+      <Snackbar
+        open={toast}
+        autoHideDuration={3000}
+        onClose={handleSnackBarClose}
+      >
+        <Alert
+          onClose={handleSnackBarClose}
+          severity={severity}
+          sx={{ width: "100%" }}
+        >
+          {toastMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
