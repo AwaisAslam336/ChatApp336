@@ -198,14 +198,18 @@ const uploadProfilePicture = async (req, res) => {
 const searchUsers = async (req, res) => {
   try {
     const searchQuery = req.query?.search;
-    if (typeof searchQuery === "string") {
+    const currentUser = req.user?.data?.email;
+    if (typeof searchQuery === "string" && currentUser) {
+      //find users by name (i->case insensitive)
+      //exclude current user
       const result = await User.find(
-        { username: searchQuery },
+        { username: { $regex: searchQuery, $options: "i" } },
         "-password -refreshToken -_id",
         {
           limit: 10,
         }
-      );
+      ).find({ email: { $ne: currentUser } });
+
       res.status(200).send(result);
     } else {
       res.status(400).send("Invalid Search.");

@@ -122,13 +122,15 @@ export default function PrimarySearchAppBar(props) {
     const currentUser = JSON.parse(window.localStorage.getItem("userInfo"));
     if (accessToken && user.email && currentUser.email) {
       try {
-        await axios.post(
+        const result = await axios.post(
           `http://localhost:8000/api/conversation/create`,
           [currentUser.email, user.email],
           { headers: { Authorization: `Bearer ${accessToken}` } },
           { withCredentials: true }
         );
-        setToastMessage("Conversation Created.");
+        result.data?.message
+          ? setToastMessage(result.data.message)
+          : setToastMessage("Conversation Created.");
         setSeverity("success");
         setToast(true);
       } catch (error) {
@@ -156,9 +158,16 @@ export default function PrimarySearchAppBar(props) {
           { headers: { Authorization: `Bearer ${accessToken}` } },
           { withCredentials: true }
         );
-        setUsers(result.data);
-        handleSearchDialogOpen();
-        setLoader(false);
+        if (result.data?.length > 0) {
+          setUsers(result.data);
+          handleSearchDialogOpen();
+          setLoader(false);
+        } else {
+          setLoader(false);
+          setToastMessage("No such user found.");
+          setSeverity("info");
+          setToast(true);
+        }
       } catch (error) {
         setLoader(false);
         error?.message && setToastMessage(error.message);
