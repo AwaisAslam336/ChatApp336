@@ -8,16 +8,16 @@ import { Alert, Avatar, Box, DialogTitle, Snackbar } from "@mui/material";
 
 function ChatPage() {
   const { accessToken, setAccessToken } = React.useContext(AuthContext);
-  const [toastMessage, setToastMessage] = React.useState();
-  const [toast, setToast] = React.useState(false);
-  const [openDialog, setOpenDialog] = React.useState(false);
+  const [toastMessage, setToastMessage] = useState();
+  const [toast, setToast] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     /* handling accessToken after page refresh */
-    const getNewAccessToken = () => {
+    const getNewAccessToken = async () => {
       if (!accessToken) {
-        axios
+        await axios
           .get("http://localhost:8000/api/user/token", {
             withCredentials: true,
           })
@@ -26,15 +26,35 @@ function ChatPage() {
           })
           .catch((error) => {
             navigate("/");
-            console.log(error?.response?.data);
+            //console.log(error?.response?.data);
           });
+      }
+    };
+
+    /* get all the conversations of current user */
+    const getConversations = async () => {
+      if (!accessToken) {
+        return;
+      }
+      try {
+        const result = await axios({
+          method: "get",
+          url: "http://localhost:8000/api/conversation/get",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+        console.log(result);
+      } catch (error) {
+        console.log(error);
       }
     };
 
     return () => {
       getNewAccessToken();
+      getConversations();
     };
-  }, []);
+  }, [accessToken]);
 
   //close toast
   const handleClose = (event, reason) => {
@@ -67,11 +87,13 @@ function ChatPage() {
 
   return (
     <div className="bg-slate-200 h-screen">
+      {/* ****navbar**** */}
       <PrimarySearchAppBar
         handleLogout={logout}
         handleProfile={handleUserProfile}
       />
       <Box className="flex flex-row">
+        {/* ****Converstaions List**** */}
         <Box className="basis-1/4">
           <Box className="flex items-center rounded-md bg bg-slate-300  pl-3">
             <Avatar
@@ -87,6 +109,7 @@ function ChatPage() {
             </DialogTitle>
           </Box>
         </Box>
+        {/* ****Chat Box**** */}
       </Box>
 
       <Snackbar open={toast} autoHideDuration={3000} onClose={handleClose}>
