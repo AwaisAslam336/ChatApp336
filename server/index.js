@@ -31,14 +31,19 @@ app.use(cors(corsOptions));
 app.use("/api/user", userRouter);
 app.use("/api/conversation", conversationRouter);
 
-app.listen(port, async () => {
+async function run() {
   try {
     await mongoose.connect(process.env.MONGODB_URL, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
-    console.log("App is running on port", port);
+    console.log("mongodb connected...");
+    app.listen(port, () => {
+      console.log("App is running on port", port);
+    });
   } catch (error) {
-    console.log(error);
+    console.log("Connection Error with Database");
+    process.exit();
   }
-});
+}
+run();

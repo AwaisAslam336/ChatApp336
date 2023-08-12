@@ -4,6 +4,7 @@ const User = require("../Models/UserModel");
 const dayjs = require("dayjs");
 const fs = require("fs");
 const path = require("path");
+const { Console } = require("console");
 async function registerUser(req, res) {
   try {
     const username = req.body.username;
@@ -28,7 +29,7 @@ async function registerUser(req, res) {
       password: encryptedPassword,
     });
 
-    const AccessToken = generateAccessToken(data.email);
+    const AccessToken = generateAccessToken(data.email, data._id);
     const RefreshToken = generateRefreshToken(data.email);
 
     res.cookie("secureCookie", RefreshToken, {
@@ -40,7 +41,12 @@ async function registerUser(req, res) {
 
     res.status(201).send({
       result: "success",
-      data: { email: data.email, username: data.username },
+      data: {
+        email: data.email,
+        username: data.username,
+        _id: data._id,
+        pic: data.pic,
+      },
       AccessToken,
     });
 
@@ -71,8 +77,8 @@ async function loginUser(req, res) {
       return res.status(400).send("Email or Password is incorrect.");
     }
 
-    const AccessToken = generateAccessToken(isUser.email, isUser.username);
     const RefreshToken = generateRefreshToken(isUser.email);
+    const AccessToken = generateAccessToken(isUser.email, isUser._id);
 
     res.cookie("secureCookie", RefreshToken, {
       secure: process.env.NODE_ENV !== "development",
@@ -83,7 +89,12 @@ async function loginUser(req, res) {
 
     res.status(201).send({
       result: "success",
-      data: { email: isUser.email, username: isUser.username, pic: isUser.pic },
+      data: {
+        _id: isUser._id,
+        email: isUser.email,
+        username: isUser.username,
+        pic: isUser.pic,
+      },
       AccessToken,
     });
 
@@ -114,7 +125,7 @@ async function getAccessToken(req, res) {
       if (err) {
         return res.status(403).send({ message: "Refresh Token is Invalid." });
       }
-      const AccessToken = generateAccessToken(isUser.email);
+      const AccessToken = generateAccessToken(isUser.email, isUser._id);
       const NewRefreshToken = generateRefreshToken(isUser.email);
 
       res.cookie("secureCookie", NewRefreshToken, {
@@ -155,17 +166,17 @@ async function logoutUser(req, res) {
 function generateRefreshToken(email) {
   return jwt.sign(
     {
-      data: { email: email },
+      data: { email },
     },
     process.env.REFRESH_TOKEN_SECRET,
     { expiresIn: "7d" }
   );
 }
 
-function generateAccessToken(email) {
+function generateAccessToken(email, _id) {
   return jwt.sign(
     {
-      data: { email: email },
+      data: { email, _id },
     },
     process.env.ACCESS_TOKEN_SECRET,
     { expiresIn: "1h" }
@@ -204,7 +215,7 @@ const searchUsers = async (req, res) => {
       //exclude current user
       const result = await User.find(
         { username: { $regex: searchQuery, $options: "i" } },
-        "-password -refreshToken -_id",
+        "-password -refreshToken",
         {
           limit: 10,
         }

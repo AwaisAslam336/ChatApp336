@@ -20,16 +20,26 @@ const createConversation = async (req, res) => {
 };
 
 const getAllConversations = async (req, res) => {
-  const currentUserEmail = req.user.data.email;
-  console.log(currentUserEmail);
-  if (!currentUserEmail) {
+  const currentUserId = req.user?.data?._id;
+
+  if (!currentUserId) {
     return res.status(400).send({ message: "Failed to get conversations." });
   }
   try {
-    const conversations = await Conversation.find({
-      members: currentUserEmail,
+    const conversations = await Conversation.find(
+      {
+        members: currentUserId,
+      },
+      "members"
+    ).populate("members", "-password -refreshToken");
+
+    let result = conversations.map((conversation) => {
+      return {
+        member: conversation.members.find((mbr) => mbr._id != currentUserId),
+        conversation_id: conversation._id,
+      };
     });
-    res.status(200).send(conversations);
+    res.status(200).send(result);
   } catch (error) {
     res.status(500).send(error?.message);
   }

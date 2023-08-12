@@ -11,50 +11,45 @@ function ChatPage() {
   const [toastMessage, setToastMessage] = useState();
   const [toast, setToast] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
+  const [conversations, setConversations] = useState();
+  const [value, setValue] = React.useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
     /* handling accessToken after page refresh */
-    const getNewAccessToken = async () => {
-      if (!accessToken) {
-        await axios
-          .get("http://localhost:8000/api/user/token", {
-            withCredentials: true,
-          })
-          .then((result) => {
-            setAccessToken(result?.data?.AccessToken);
-          })
-          .catch((error) => {
-            navigate("/");
-            //console.log(error?.response?.data);
-          });
-      }
-    };
-
-    /* get all the conversations of current user */
-    const getConversations = async () => {
-      if (!accessToken) {
-        return;
-      }
-      try {
-        const result = await axios({
-          method: "get",
-          url: "http://localhost:8000/api/conversation/get",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+    if (!accessToken) {
+      axios
+        .get("http://localhost:8000/api/user/token", {
+          withCredentials: true,
+        })
+        .then((result) => {
+          setAccessToken(result?.data?.AccessToken);
+        })
+        .catch((error) => {
+          navigate("/");
+          //console.log(error?.response?.data);
         });
-        console.log(result);
-      } catch (error) {
+    }
+  }, []);
+  useEffect(() => {
+    /* get all the conversations of current user */
+    if (!accessToken) {
+      return () => {};
+    }
+    axios({
+      method: "get",
+      url: "http://localhost:8000/api/conversation/get",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+      .then((result) => {
+        setConversations(result.data);
+      })
+      .catch((error) => {
         console.log(error);
-      }
-    };
-
-    return () => {
-      getNewAccessToken();
-      getConversations();
-    };
-  }, [accessToken]);
+      });
+  }, [value]);
 
   //close toast
   const handleClose = (event, reason) => {
@@ -77,6 +72,9 @@ function ChatPage() {
       setToast(true);
     }
   };
+  const refreshPage = () => {
+    setValue((value) => value + 1);
+  };
 
   const handleUserProfile = () => {
     setOpenDialog(true);
@@ -91,23 +89,33 @@ function ChatPage() {
       <PrimarySearchAppBar
         handleLogout={logout}
         handleProfile={handleUserProfile}
+        refreshPage={refreshPage}
       />
       <Box className="flex flex-row">
         {/* ****Converstaions List**** */}
-        <Box className="basis-1/4">
-          <Box className="flex items-center rounded-md bg bg-slate-300  pl-3">
-            <Avatar
-              alt="Profile Picture"
-              src={``}
-              sx={{ width: 46, height: 46 }}
-            />
-            <DialogTitle
-              className="text-black-600"
-              id="responsive-dialog-title"
-            >
-              Hello
-            </DialogTitle>
-          </Box>
+        <Box className="basis-1/4 bg-slate-100 h-screen">
+          {conversations &&
+            conversations.map((conversation) => {
+              console.log(conversation?.member?.pic);
+              return (
+                <Box className="flex items-center rounded-md border-2 active:bg-violet-700 hover:bg-blue-400  m-1 pl-5">
+                  <Avatar
+                    alt="Profile Picture"
+                    src={`http://localhost:8000/${conversation?.member?.pic}`}
+                    sx={{ width: 46, height: 46 }}
+                  />
+                  <Box className="flex flex-col ml-5 p-1">
+                    <text className="text-xl">
+                      {conversation?.member?.username.charAt(0).toUpperCase() +
+                        conversation?.member?.username.slice(1)}
+                    </text>
+                    <text className="text-gray-500">
+                      {conversation?.member?.email}
+                    </text>
+                  </Box>
+                </Box>
+              );
+            })}
         </Box>
         {/* ****Chat Box**** */}
       </Box>

@@ -120,14 +120,16 @@ export default function PrimarySearchAppBar(props) {
   const handleSelectedSearchUser = async (user) => {
     handleSearchDialogClose();
     const currentUser = JSON.parse(window.localStorage.getItem("userInfo"));
-    if (accessToken && user.email && currentUser.email) {
+
+    if (accessToken && user._id && currentUser._id) {
       try {
         const result = await axios.post(
           `http://localhost:8000/api/conversation/create`,
-          [currentUser.email, user.email],
+          [currentUser._id, user._id],
           { headers: { Authorization: `Bearer ${accessToken}` } },
           { withCredentials: true }
         );
+        props.refreshPage();
         result.data?.message
           ? setToastMessage(result.data.message)
           : setToastMessage("Conversation Created.");
