@@ -6,6 +6,7 @@ const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
 const { userRouter } = require("./Routes/User");
 const { conversationRouter } = require("./Routes/conversation");
+const { messageRouter } = require("./Routes/message");
 
 const app = express();
 const port = 8000;
@@ -30,6 +31,7 @@ app.use(cors(corsOptions));
 
 app.use("/api/user", userRouter);
 app.use("/api/conversation", conversationRouter);
+app.use("/api/message", messageRouter);
 
 async function run() {
   try {

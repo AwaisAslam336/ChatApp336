@@ -4,14 +4,7 @@ import { AuthContext } from "../AuthContext";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import ProfileDialogBox from "../components/ProfileDialogBox";
-import {
-  Alert,
-  Avatar,
-  Box,
-  Button,
-  DialogTitle,
-  Snackbar,
-} from "@mui/material";
+import { Alert, Avatar, Box, Snackbar } from "@mui/material";
 
 function ChatPage() {
   const { accessToken, setAccessToken } = React.useContext(AuthContext);
@@ -19,8 +12,12 @@ function ChatPage() {
   const [toast, setToast] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [conversations, setConversations] = useState();
+  const [currentConversation, setCurrentConversation] = useState();
+  const [allMessages, setAllMessages] = useState();
+  const [textMessage, setTextMessage] = useState();
   const [value, setValue] = React.useState(0);
   const navigate = useNavigate();
+  const currentUser = JSON.parse(window.localStorage.getItem("userInfo"));
 
   useEffect(() => {
     /* handling accessToken after page refresh */
@@ -89,6 +86,44 @@ function ChatPage() {
   const handleProfileClose = () => {
     setOpenDialog(false);
   };
+  const handleConversationClick = async (conversationId) => {
+    if (!conversationId || !accessToken) {
+      return;
+    }
+    try {
+      const messages = await axios({
+        method: "get",
+        url: `http://localhost:8000/api/message/get/${conversationId}`,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      setAllMessages(messages.data);
+      setCurrentConversation(conversationId);
+    } catch (error) {
+      //add toast error here
+    }
+  };
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!currentConversation || !textMessage || !accessToken) {
+      return;
+    }
+    try {
+      await axios({
+        method: "post",
+        data: { conversationId: currentConversation, content: textMessage },
+        url: `http://localhost:8000/api/message/create`,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      setTextMessage("");
+    } catch (error) {
+      console.log(error);
+      //add toast error here
+    }
+  };
 
   return (
     <div className="bg-slate-200 h-screen flex flex-col">
@@ -103,9 +138,14 @@ function ChatPage() {
         <Box className="basis-1/4 bg-slate-100 rounded-lg m-1">
           {conversations &&
             conversations.map((conversation) => {
-              console.log(conversation?.member?.pic);
               return (
-                <Box className="flex items-center rounded-md border-2 active:bg-blue-400 hover:bg-blue-200  m-1 pl-5">
+                <Box
+                  type="Submit"
+                  onClick={() => {
+                    handleConversationClick(conversation.conversation_id);
+                  }}
+                  className="flex items-center rounded-md border-2 active:bg-blue-400 hover:bg-blue-200  m-1 pl-5"
+                >
                   <Avatar
                     alt="Profile Picture"
                     src={`http://localhost:8000/${conversation?.member?.pic}`}
@@ -126,28 +166,41 @@ function ChatPage() {
         </Box>
         {/* ****Chat Box**** */}
         <Box className="basis-2/4 flex flex-col p-2">
-          <Box className="h-full bg-slate-100 mb-1 rounded-lg">
-            <Box className="bg-green-300 text-gray-900 rounded-lg p-2 m-2 w-fit">
-              <text className="block font-semibold">User 1</text>
-              Hi, this is me
-            </Box>
-            <Box className="bg-blue-300 text-gray-900 rounded-lg p-2 m-2 w-fit ">
-              <text className="block font-semibold">User 2</text>
-              Hi, how are you
-            </Box>
+          <Box className="h-full bg-slate-100 mb-1 rounded-lg flex flex-col">
+            {console.log(Array.isArray(allMessages))}
+            {Array.isArray(allMessages) &&
+              allMessages.map((msg) => {
+                if (msg.senderId == currentUser._id) {
+                  return (
+                    <div>
+                      <Box className="bg-blue-300 text-gray-900 rounded-lg p-2 m-2 w-fit float-right">
+                        <text className="block font-semibold">you</text>
+                        {msg.content}
+                      </Box>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <Box className="bg-green-300 text-gray-900 rounded-lg p-2 m-2 w-fit">
+                      <text className="block font-semibold">User 1</text>
+                      {msg.content}
+                    </Box>
+                  );
+                }
+              })}
           </Box>
 
           <form className="h-max">
-            <label for="chat" class="sr-only">
+            <label for="chat" className="sr-only">
               Your message
             </label>
-            <div class="flex items-center px-3 py-2 rounded-lg bg-gray-50 ">
+            <div className="flex items-center px-3 py-2 rounded-lg bg-gray-50 ">
               <button
                 type="button"
-                class="inline-flex justify-center p-2 text-gray-500 rounded-lg cursor-pointer hover:text-gray-900 hover:bg-gray-100 "
+                className="inline-flex justify-center p-2 text-gray-500 rounded-lg cursor-pointer hover:text-gray-900 hover:bg-gray-100 "
               >
                 <svg
-                  class="w-5 h-5"
+                  className="w-5 h-5"
                   aria-hidden="true"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
@@ -172,14 +225,14 @@ function ChatPage() {
                     d="M13 5.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0ZM7.565 7.423 4.5 14h11.518l-2.516-3.71L11 13 7.565 7.423Z"
                   />
                 </svg>
-                <span class="sr-only">Upload image</span>
+                <span className="sr-only">Upload image</span>
               </button>
               <button
                 type="button"
-                class="p-2 text-gray-500 rounded-lg cursor-pointer hover:text-gray-900 hover:bg-gray-100 "
+                className="p-2 text-gray-500 rounded-lg cursor-pointer hover:text-gray-900 hover:bg-gray-100 "
               >
                 <svg
-                  class="w-5 h-5"
+                  className="w-5 h-5"
                   aria-hidden="true"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
@@ -193,20 +246,25 @@ function ChatPage() {
                     d="M13.408 7.5h.01m-6.876 0h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM4.6 11a5.5 5.5 0 0 0 10.81 0H4.6Z"
                   />
                 </svg>
-                <span class="sr-only">Add emoji</span>
+                <span className="sr-only">Add emoji</span>
               </button>
               <textarea
                 id="chat"
                 rows="1"
-                class="block mx-4 p-2.5 w-full text-sm text-gray-900 bg-white rounded-lg border focus:border-blue-400 border-gray-300"
+                value={textMessage}
+                onChange={(e) => {
+                  setTextMessage(e.target.value);
+                }}
+                className="block mx-4 p-2.5 w-full text-sm text-gray-900 bg-white rounded-lg border focus:border-blue-400 border-gray-300"
                 placeholder="Your message..."
               ></textarea>
               <button
                 type="submit"
-                class="inline-flex justify-center p-2 text-blue-600 rounded-full cursor-pointer hover:bg-blue-100 "
+                onClick={handleSendMessage}
+                className="inline-flex justify-center p-2 text-blue-600 rounded-full cursor-pointer hover:bg-blue-100 "
               >
                 <svg
-                  class="w-5 h-5 rotate-90"
+                  className="w-5 h-5 rotate-90"
                   aria-hidden="true"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="currentColor"
@@ -214,7 +272,7 @@ function ChatPage() {
                 >
                   <path d="m17.914 18.594-8-18a1 1 0 0 0-1.828 0l-8 18a1 1 0 0 0 1.157 1.376L8 18.281V9a1 1 0 0 1 2 0v9.281l6.758 1.689a1 1 0 0 0 1.156-1.376Z" />
                 </svg>
-                <span class="sr-only">Send message</span>
+                <span className="sr-only">Send message</span>
               </button>
             </div>
           </form>

@@ -5,7 +5,11 @@ let messageSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  userId: {
+  senderId: {
+    type: String,
+    required: true,
+  },
+  content: {
     type: String,
     required: true,
   },
