@@ -5,6 +5,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import ProfileDialogBox from "../components/ProfileDialogBox";
 import { Alert, Avatar, Box, Snackbar } from "@mui/material";
+import { socket } from "../socket";
 
 function ChatPage() {
   const { accessToken, setAccessToken } = React.useContext(AuthContext);
@@ -15,10 +16,15 @@ function ChatPage() {
   const [currentConversation, setCurrentConversation] = useState();
   const [allMessages, setAllMessages] = useState();
   const [textMessage, setTextMessage] = useState();
+  const [socketConnection, setSocketConnection] = useState(false);
   const [value, setValue] = React.useState(0);
   const navigate = useNavigate();
   const currentUser = JSON.parse(window.localStorage.getItem("userInfo"));
 
+  useEffect(() => {
+    socket.emit("setup", currentUser?._id);
+    socket.on("connect", () => setSocketConnection(true));
+  }, []);
   useEffect(() => {
     /* handling accessToken after page refresh */
     if (!accessToken) {
@@ -31,7 +37,7 @@ function ChatPage() {
         })
         .catch((error) => {
           navigate("/");
-          //console.log(error?.response?.data);
+          console.log(error?.response?.data);
         });
     }
   }, []);
@@ -53,7 +59,7 @@ function ChatPage() {
       .catch((error) => {
         console.log(error);
       });
-  }, [value]);
+  }, [value, accessToken]);
 
   //close toast
   const handleClose = (event, reason) => {
@@ -70,6 +76,7 @@ function ChatPage() {
         withCredentials: true,
       });
       navigate("/");
+      //socket.emit("disconnect");
     } catch (error) {
       // setLoader(false);
       setToastMessage(error?.response?.data);
@@ -100,6 +107,7 @@ function ChatPage() {
       });
       setAllMessages(messages.data);
       setCurrentConversation(conversationId);
+      socket.emit("join chat", conversationId);
     } catch (error) {
       //add toast error here
     }
@@ -110,7 +118,7 @@ function ChatPage() {
       return;
     }
     try {
-      await axios({
+      const result = await axios({
         method: "post",
         data: { conversationId: currentConversation, content: textMessage },
         url: `http://localhost:8000/api/message/create`,
@@ -118,6 +126,7 @@ function ChatPage() {
           Authorization: `Bearer ${accessToken}`,
         },
       });
+      // socket.emit("sendMsg", { newMsg: result.data });
       setTextMessage("");
     } catch (error) {
       console.log(error);
@@ -133,9 +142,9 @@ function ChatPage() {
         handleProfile={handleUserProfile}
         refreshPage={refreshPage}
       />
-      <Box className="flex flex-row h-full">
+      <Box className="flex flex-row h-90vh">
         {/* ****Converstaions List**** */}
-        <Box className="basis-1/4 bg-slate-100 rounded-lg m-1">
+        <Box className="h-full basis-1/4 bg-slate-100 rounded-lg p-1">
           {conversations &&
             conversations.map((conversation) => {
               return (
@@ -165,9 +174,8 @@ function ChatPage() {
             })}
         </Box>
         {/* ****Chat Box**** */}
-        <Box className="basis-2/4 flex flex-col p-2">
-          <Box className="h-full bg-slate-100 mb-1 rounded-lg flex flex-col">
-            {console.log(Array.isArray(allMessages))}
+        <Box className="h-full basis-2/4 flex flex-col">
+          <Box className=" basis-11/12 bg-slate-100 m-2 rounded-lg flex flex-col overflow-auto">
             {Array.isArray(allMessages) &&
               allMessages.map((msg) => {
                 if (msg.senderId == currentUser._id) {
@@ -190,7 +198,7 @@ function ChatPage() {
               })}
           </Box>
 
-          <form className="h-max">
+          <form className="basis-1/12 mt-1 mb-3 mx-2">
             <label for="chat" className="sr-only">
               Your message
             </label>
@@ -255,7 +263,7 @@ function ChatPage() {
                 onChange={(e) => {
                   setTextMessage(e.target.value);
                 }}
-                className="block mx-4 p-2.5 w-full text-sm text-gray-900 bg-white rounded-lg border focus:border-blue-400 border-gray-300"
+                className="block mx-4 p-3 w-full text-md text-gray-900 bg-white rounded-lg border focus:border-blue-400 border-gray-300"
                 placeholder="Your message..."
               ></textarea>
               <button

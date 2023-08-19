@@ -40,8 +40,32 @@ async function run() {
       useUnifiedTopology: true,
     });
     console.log("mongodb connected...");
-    app.listen(port, () => {
+    const server = app.listen(port, () => {
       console.log("App is running on port", port);
+    });
+    const io = require("socket.io")(server, {
+      pingTimeout: 60000,
+      cors: {
+        origin: "http://localhost:3000",
+      },
+    });
+    io.on("connect", (socket) => {
+      console.log(`connected to socket.io`);
+
+      socket.on("setup", (userId) => {
+        socket.join(userId);
+        console.log("user connected");
+        socket.emit("connected");
+      });
+
+      socket.on("join chat", (room) => {
+        socket.join(room);
+        console.log("User joined room " + room);
+      });
+
+      socket.on("disconnect", () => {
+        console.log(`Socket ${socket.id} disconnected`);
+      });
     });
   } catch (error) {
     console.log("Connection Error with Database");

@@ -9,8 +9,8 @@ const createMessage = async (req, res) => {
   }
 
   try {
-    await Message.create({ conversationId, senderId, content });
-    res.status(201).send({ message: "Message Successfully Created" });
+    const newMsg = await Message.create({ conversationId, senderId, content });
+    res.status(201).send({ newMsg });
   } catch (error) {
     res.status(500).send(error?.message);
   }
