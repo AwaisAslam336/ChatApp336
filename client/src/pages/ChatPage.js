@@ -23,8 +23,11 @@ function ChatPage() {
 
   useEffect(() => {
     socket.emit("setup", currentUser?._id);
-    socket.on("connect", () => setSocketConnection(true));
+    socket.on("onMsgReceive", (newMsg) => {
+      setAllMessages((msgs) => [...msgs, { ...newMsg }]);
+    });
   }, []);
+
   useEffect(() => {
     /* handling accessToken after page refresh */
     if (!accessToken) {
@@ -37,7 +40,7 @@ function ChatPage() {
         })
         .catch((error) => {
           navigate("/");
-          console.log(error?.response?.data);
+          //console.log(error?.response?.data);
         });
     }
   }, []);
@@ -93,41 +96,50 @@ function ChatPage() {
   const handleProfileClose = () => {
     setOpenDialog(false);
   };
-  const handleConversationClick = async (conversationId) => {
-    if (!conversationId || !accessToken) {
+  const handleConversationClick = async (conversation) => {
+    if (!conversation.conversation_id || !accessToken) {
       return;
     }
     try {
       const messages = await axios({
         method: "get",
-        url: `http://localhost:8000/api/message/get/${conversationId}`,
+        url: `http://localhost:8000/api/message/get/${conversation.conversation_id}`,
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
       });
       setAllMessages(messages.data);
-      setCurrentConversation(conversationId);
-      socket.emit("join chat", conversationId);
+      setCurrentConversation(conversation);
+      socket.emit("join chat", conversation.conversation_id);
     } catch (error) {
       //add toast error here
     }
   };
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!currentConversation || !textMessage || !accessToken) {
+    if (!currentConversation.conversation_id || !textMessage || !accessToken) {
       return;
     }
     try {
       const result = await axios({
         method: "post",
-        data: { conversationId: currentConversation, content: textMessage },
+        data: {
+          conversationId: currentConversation.conversation_id,
+          content: textMessage,
+        },
         url: `http://localhost:8000/api/message/create`,
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
       });
-      // socket.emit("sendMsg", { newMsg: result.data });
       setTextMessage("");
+      const receiverUserId = currentConversation.member._id;
+      const data = {
+        newMsg: result.data.newMsg,
+        receiverUserId,
+      };
+      socket.emit("sendMsg", data);
+      setAllMessages((msgs) => [...msgs, { ...result.data.newMsg }]);
     } catch (error) {
       console.log(error);
       //add toast error here
@@ -151,7 +163,7 @@ function ChatPage() {
                 <Box
                   type="Submit"
                   onClick={() => {
-                    handleConversationClick(conversation.conversation_id);
+                    handleConversationClick(conversation);
                   }}
                   className="flex items-center rounded-md border-2 active:bg-blue-400 hover:bg-blue-200  m-1 pl-5"
                 >

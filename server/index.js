@@ -63,6 +63,12 @@ async function run() {
         console.log("User joined room " + room);
       });
 
+      socket.on("sendMsg", (data) => {
+        if (!data.receiverUserId) return;
+
+        socket.in(data.receiverUserId).emit("onMsgReceive", data.newMsg);
+      });
+
       socket.on("disconnect", () => {
         console.log(`Socket ${socket.id} disconnected`);
       });
