@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import PrimarySearchAppBar from "../components/Navbar";
 import { AuthContext } from "../AuthContext";
 import axios from "axios";
@@ -16,18 +16,34 @@ function ChatPage() {
   const [currentConversation, setCurrentConversation] = useState();
   const [allMessages, setAllMessages] = useState();
   const [textMessage, setTextMessage] = useState();
-  const [socketConnection, setSocketConnection] = useState(false);
+  const [receiverSideTyping, setReceiverSideTyping] = useState(false);
+  const [senderSideTyping, setSenderSideTyping] = useState(false);
   const [value, setValue] = React.useState(0);
   const navigate = useNavigate();
   const currentUser = JSON.parse(window.localStorage.getItem("userInfo"));
+  const messageEl = useRef(null);
 
   useEffect(() => {
     socket.emit("setup", currentUser?._id);
     socket.on("onMsgReceive", (newMsg) => {
       setAllMessages((msgs) => [...msgs, { ...newMsg }]);
     });
+    socket.on("typing", () => {
+      setReceiverSideTyping(true);
+    });
+    socket.on("stop typing", () => {
+      setReceiverSideTyping(false);
+    });
   }, []);
 
+  useEffect(() => {
+    if (messageEl) {
+      messageEl.current.addEventListener("DOMNodeInserted", (event) => {
+        const { currentTarget: target } = event;
+        target.scroll({ top: target.scrollHeight, behavior: "auto" });
+      });
+    }
+  }, []);
   useEffect(() => {
     /* handling accessToken after page refresh */
     if (!accessToken) {
@@ -133,6 +149,7 @@ function ChatPage() {
         },
       });
       setTextMessage("");
+      handleStopTyping();
       const receiverUserId = currentConversation.member._id;
       const data = {
         newMsg: result.data.newMsg,
@@ -145,7 +162,25 @@ function ChatPage() {
       //add toast error here
     }
   };
-
+  const handleTyping = async (e) => {
+    setTextMessage(e.target.value);
+    const receiverId =
+      currentConversation.member._id != currentUser._id
+        ? currentConversation.member._id
+        : null;
+    if (!senderSideTyping) {
+      setSenderSideTyping(true);
+      socket.emit("typing", receiverId);
+    }
+  };
+  const handleStopTyping = () => {
+    const receiverId =
+      currentConversation.member._id != currentUser._id
+        ? currentConversation.member._id
+        : null;
+    socket.emit("stop typing", receiverId);
+    setSenderSideTyping(false);
+  };
   return (
     <div className="bg-slate-200 h-screen flex flex-col">
       {/* ****navbar**** */}
@@ -187,7 +222,10 @@ function ChatPage() {
         </Box>
         {/* ****Chat Box**** */}
         <Box className="h-full basis-2/4 flex flex-col">
-          <Box className=" basis-11/12 bg-slate-100 m-2 rounded-lg flex flex-col overflow-auto">
+          <Box
+            ref={messageEl}
+            className=" basis-11/12 bg-slate-100 m-2 rounded-lg flex flex-col overflow-auto"
+          >
             {Array.isArray(allMessages) &&
               allMessages.map((msg) => {
                 if (msg.senderId == currentUser._id) {
@@ -208,6 +246,7 @@ function ChatPage() {
                   );
                 }
               })}
+            <Box>{receiverSideTyping ? "typing" : ""}</Box>
           </Box>
 
           <form className="basis-1/12 mt-1 mb-3 mx-2">
@@ -272,9 +311,8 @@ function ChatPage() {
                 id="chat"
                 rows="1"
                 value={textMessage}
-                onChange={(e) => {
-                  setTextMessage(e.target.value);
-                }}
+                onBlur={handleStopTyping}
+                onChange={handleTyping}
                 className="block mx-4 p-3 w-full text-md text-gray-900 bg-white rounded-lg border focus:border-blue-400 border-gray-300"
                 placeholder="Your message..."
               ></textarea>

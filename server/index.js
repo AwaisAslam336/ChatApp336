@@ -65,8 +65,17 @@ async function run() {
 
       socket.on("sendMsg", (data) => {
         if (!data.receiverUserId) return;
-
         socket.in(data.receiverUserId).emit("onMsgReceive", data.newMsg);
+      });
+
+      socket.on("typing", (receiverId) => {
+        if (!receiverId) return;
+        socket.in(receiverId).emit("typing");
+      });
+      socket.on("stop typing", (receiverId) => {
+        if (!receiverId) return;
+
+        socket.in(receiverId).emit("stop typing");
       });
 
       socket.on("disconnect", () => {
@@ -75,7 +84,6 @@ async function run() {
     });
   } catch (error) {
     console.log("Connection Error with Database");
-    process.exit();
   }
 }
 run();
