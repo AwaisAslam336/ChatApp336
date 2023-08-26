@@ -3,13 +3,18 @@ const Message = require("../Models/MessageModel");
 const createMessage = async (req, res) => {
   const content = req.body?.content;
   const senderId = req.user?.data?._id;
-  const conversationId = req.body?.conversationId;
-  if (!content || !senderId || !conversationId) {
+  const conversation_id = req.body?.conversation_id;
+
+  if (!content || !senderId || !conversation_id) {
     return res.status(400).send({ message: "Invalid Request Data." });
   }
 
   try {
-    const newMsg = await Message.create({ conversationId, senderId, content });
+    const newMsg = await Message.create({
+      conversation_id,
+      senderId,
+      content,
+    });
     res.status(201).send({ newMsg });
   } catch (error) {
     res.status(500).send(error?.message);
@@ -17,13 +22,13 @@ const createMessage = async (req, res) => {
 };
 
 const getAllMessages = async (req, res) => {
-  const conversationId = req.params?.conversationId;
+  const conversation_id = req.params?.conversation_id;
 
-  if (!conversationId) {
+  if (!conversation_id) {
     return res.status(400).send({ message: "Failed to get messages." });
   }
   try {
-    const messages = await Message.find({ conversationId });
+    const messages = await Message.find({ conversation_id });
     res.status(200).send(messages);
   } catch (error) {
     res.status(500).send(error?.message);

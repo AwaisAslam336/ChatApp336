@@ -68,14 +68,23 @@ async function run() {
         socket.in(data.receiverUserId).emit("onMsgReceive", data.newMsg);
       });
 
-      socket.on("typing", (receiverId) => {
-        if (!receiverId) return;
-        socket.in(receiverId).emit("typing");
+      socket.on("new Conversation Created", (data) => {
+        if (!data) return;
+        socket.in(data.otherMember).emit("new Conversation Added");
+      });
+
+      socket.on("typing", (conversationRoom) => {
+        if (!conversationRoom) return;
+        socket.in(conversationRoom).emit("typing", conversationRoom);
       });
       socket.on("stop typing", (receiverId) => {
         if (!receiverId) return;
-
         socket.in(receiverId).emit("stop typing");
+      });
+
+      socket.off("setup", () => {
+        console.log("User Disconnected");
+        socket.leave(userId);
       });
 
       socket.on("disconnect", () => {

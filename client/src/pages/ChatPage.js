@@ -4,9 +4,10 @@ import { AuthContext } from "../AuthContext";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import ProfileDialogBox from "../components/ProfileDialogBox";
-import { Alert, Avatar, Box, Snackbar } from "@mui/material";
+import { Alert, Avatar, Box, Button, Snackbar } from "@mui/material";
+import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import { socket } from "../socket";
-
+var currentConversationCompare;
 function ChatPage() {
   const { accessToken, setAccessToken } = React.useContext(AuthContext);
   const [toastMessage, setToastMessage] = useState();
@@ -14,21 +15,52 @@ function ChatPage() {
   const [openDialog, setOpenDialog] = useState(false);
   const [conversations, setConversations] = useState();
   const [currentConversation, setCurrentConversation] = useState();
-  const [allMessages, setAllMessages] = useState();
+  const [allMessages, setAllMessages] = useState([]);
   const [textMessage, setTextMessage] = useState();
   const [receiverSideTyping, setReceiverSideTyping] = useState(false);
   const [senderSideTyping, setSenderSideTyping] = useState(false);
+  const [msgCount, setMsgCount] = useState({});
   const [value, setValue] = React.useState(0);
   const navigate = useNavigate();
   const currentUser = JSON.parse(window.localStorage.getItem("userInfo"));
   const messageEl = useRef(null);
 
   useEffect(() => {
+    currentConversationCompare = currentConversation;
+  }, [currentConversation]);
+
+  useEffect(() => {
     socket.emit("setup", currentUser?._id);
     socket.on("onMsgReceive", (newMsg) => {
-      setAllMessages((msgs) => [...msgs, { ...newMsg }]);
+      console.log(currentConversationCompare, newMsg);
+      if (
+        !currentConversationCompare ||
+        newMsg.conversation_id !== currentConversationCompare?.conversation_id
+      ) {
+        //send notification
+        setMsgCount((msgs) => {
+          if (msgs[newMsg.conversation_id]) {
+            return {
+              ...msgs,
+              [newMsg.conversation_id]: msgs[newMsg.conversation_id] + 1,
+            };
+          } else {
+            return {
+              ...msgs,
+              [newMsg.conversation_id]: 1,
+            };
+          }
+        });
+      } else {
+        setAllMessages((msgs) => [...msgs, { ...newMsg }]);
+      }
     });
-    socket.on("typing", () => {
+    socket.on("new Conversation Added", () => {
+      refreshPage();
+    });
+    socket.on("typing", (conversationRoom) => {
+      if (conversationRoom !== currentConversationCompare?.conversation_id)
+        return;
       setReceiverSideTyping(true);
     });
     socket.on("stop typing", () => {
@@ -113,23 +145,23 @@ function ChatPage() {
     setOpenDialog(false);
   };
   const handleConversationClick = async (conversation) => {
-    if (!conversation.conversation_id || !accessToken) {
-      return;
-    }
-    try {
-      const messages = await axios({
-        method: "get",
-        url: `http://localhost:8000/api/message/get/${conversation.conversation_id}`,
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      setAllMessages(messages.data);
-      setCurrentConversation(conversation);
-      socket.emit("join chat", conversation.conversation_id);
-    } catch (error) {
-      //add toast error here
-    }
+    if (!conversation.conversation_id || !accessToken) return;
+
+    const messages = await axios({
+      method: "get",
+      url: `http://localhost:8000/api/message/get/${conversation.conversation_id}`,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    setAllMessages(messages.data);
+    setCurrentConversation(conversation);
+    socket.emit("join chat", conversation.conversation_id);
+    //reset msgs count
+    setMsgCount((msgs) => {
+      return { ...msgs, [conversation.conversation_id]: null };
+    });
   };
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -140,7 +172,7 @@ function ChatPage() {
       const result = await axios({
         method: "post",
         data: {
-          conversationId: currentConversation.conversation_id,
+          conversation_id: currentConversation.conversation_id,
           content: textMessage,
         },
         url: `http://localhost:8000/api/message/create`,
@@ -164,22 +196,20 @@ function ChatPage() {
   };
   const handleTyping = async (e) => {
     setTextMessage(e.target.value);
-    const receiverId =
-      currentConversation.member._id != currentUser._id
-        ? currentConversation.member._id
-        : null;
+    const conversationRoom = currentConversation.conversation_id;
     if (!senderSideTyping) {
       setSenderSideTyping(true);
-      socket.emit("typing", receiverId);
+      socket.emit("typing", conversationRoom);
     }
   };
   const handleStopTyping = () => {
-    const receiverId =
-      currentConversation.member._id != currentUser._id
-        ? currentConversation.member._id
-        : null;
+    const receiverId = currentConversation.conversation_id;
     socket.emit("stop typing", receiverId);
     setSenderSideTyping(false);
+  };
+  const handleBackBtn = () => {
+    setCurrentConversation();
+    refreshPage();
   };
   return (
     <div className="bg-slate-200 h-screen flex flex-col">
@@ -189,9 +219,26 @@ function ChatPage() {
         handleProfile={handleUserProfile}
         refreshPage={refreshPage}
       />
+      {/* <button className="bg-blue-400 w-fit px-4 py-2 ml-4  rounded-md ">
+        
+      </button> */}
+      <div
+        onClick={handleBackBtn}
+        className={`ml-3 m-2 p-1 pr-3 w-fit bg-blue-400 rounded-md hover:bg-blue-500 cursor-pointer ${
+          currentConversation ? "lg:hidden" : "hidden"
+        }`}
+      >
+        <ArrowBackIosNewIcon sx={{ color: "#fff" }} />
+      </div>
       <Box className="flex flex-row h-90vh">
         {/* ****Converstaions List**** */}
-        <Box className="h-full basis-1/4 bg-slate-100 rounded-lg p-1">
+        <Box
+          className={`cursor-pointer h-full bg-slate-100 rounded-lg p-1 ${
+            currentConversation
+              ? "collapse lg:visible w-0 lg:basis-1/3"
+              : "visible w-full lg:basis-1/3"
+          }`}
+        >
           {conversations &&
             conversations.map((conversation) => {
               return (
@@ -200,53 +247,74 @@ function ChatPage() {
                   onClick={() => {
                     handleConversationClick(conversation);
                   }}
-                  className="flex items-center rounded-md border-2 active:bg-blue-400 hover:bg-blue-200  m-1 pl-5"
+                  className={`flex items-center rounded-md border-2 m-1 pl-5 hover:bg-blue-200 ${
+                    currentConversation?.conversation_id ==
+                    conversation.conversation_id
+                      ? "bg-blue-300"
+                      : ""
+                  }`}
                 >
                   <Avatar
                     alt="Profile Picture"
                     src={`http://localhost:8000/${conversation?.member?.pic}`}
                     sx={{ width: 46, height: 46 }}
                   />
-                  <Box className="flex flex-col ml-5 p-1">
+                  <Box className="flex flex-col ml-5 p-1 w-full">
                     <text className="text-xl font-semibold">
                       {conversation?.member?.username?.charAt(0).toUpperCase() +
                         conversation?.member?.username?.slice(1)}
                     </text>
-                    <text className="text-gray-500">
-                      {conversation?.member?.email}
-                    </text>
+                    <div className="">
+                      <text className="text-gray-500">
+                        {conversation?.member?.email}
+                      </text>
+                      <text className="text-green-500 font-bold float-right">
+                        {msgCount[conversation.conversation_id]}
+                      </text>
+                    </div>
                   </Box>
                 </Box>
               );
             })}
         </Box>
         {/* ****Chat Box**** */}
-        <Box className="h-full basis-2/4 flex flex-col">
+        <Box
+          className={`h-full flex flex-col  ${
+            currentConversation
+              ? "visible w-full  lg:basis-2/3"
+              : "collapse w-0  lg:basis-2/3"
+          }`}
+        >
           <Box
             ref={messageEl}
             className=" basis-11/12 bg-slate-100 m-2 rounded-lg flex flex-col overflow-auto"
           >
             {Array.isArray(allMessages) &&
+              allMessages.length > 0 &&
               allMessages.map((msg) => {
                 if (msg.senderId == currentUser._id) {
                   return (
                     <div>
                       <Box className="bg-blue-300 text-gray-900 rounded-lg p-2 m-2 w-fit float-right">
                         <text className="block font-semibold">you</text>
-                        {msg.content}
+                        <text>{msg.content}</text>
                       </Box>
                     </div>
                   );
                 } else {
                   return (
                     <Box className="bg-green-300 text-gray-900 rounded-lg p-2 m-2 w-fit">
-                      <text className="block font-semibold">User 1</text>
-                      {msg.content}
+                      <text className="block font-semibold">
+                        {currentConversation?.member?.username}
+                      </text>
+                      <text>{msg.content}</text>
                     </Box>
                   );
                 }
               })}
-            <Box>{receiverSideTyping ? "typing" : ""}</Box>
+            <Box className="p-1 text-green-600">
+              {receiverSideTyping ? "typing..." : ""}
+            </Box>
           </Box>
 
           <form className="basis-1/12 mt-1 mb-3 mx-2">
@@ -313,6 +381,7 @@ function ChatPage() {
                 value={textMessage}
                 onBlur={handleStopTyping}
                 onChange={handleTyping}
+                onSubmit={handleSendMessage}
                 className="block mx-4 p-3 w-full text-md text-gray-900 bg-white rounded-lg border focus:border-blue-400 border-gray-300"
                 placeholder="Your message..."
               ></textarea>

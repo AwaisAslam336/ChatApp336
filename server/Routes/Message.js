@@ -7,6 +7,6 @@ let {
 } = require("../Controllers/MessageController");
 
 messageRouter.post("/create", auth, createMessage);
-messageRouter.get("/get/:conversationId", auth, getAllMessages);
+messageRouter.get("/get/:conversation_id", auth, getAllMessages);
 
 module.exports = { messageRouter };

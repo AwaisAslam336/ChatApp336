@@ -18,6 +18,7 @@ import SearchDialog from "./SearchDialogBox";
 import axios from "axios";
 import { AuthContext } from "../AuthContext";
 import { Alert, CircularProgress, Snackbar } from "@mui/material";
+import { socket } from "../socket";
 
 const Search = styled("div")(({ theme }) => ({
   position: "relative",
@@ -129,10 +130,10 @@ export default function PrimarySearchAppBar(props) {
           { headers: { Authorization: `Bearer ${accessToken}` } },
           { withCredentials: true }
         );
+        console.log(result.data);
+        socket.emit("new Conversation Created", result.data);
         props.refreshPage();
-        result.data?.message
-          ? setToastMessage(result.data.message)
-          : setToastMessage("Conversation Created.");
+        setToastMessage("Conversation Successfully Created");
         setSeverity("success");
         setToast(true);
       } catch (error) {
@@ -296,7 +297,7 @@ export default function PrimarySearchAppBar(props) {
           />
           <Box sx={{ flexGrow: 1 }} />
           <Box sx={{ display: { xs: "none", md: "flex" } }}>
-            <IconButton
+            {/* <IconButton
               size="large"
               aria-label="show 4 new mails"
               color="inherit"
@@ -304,8 +305,8 @@ export default function PrimarySearchAppBar(props) {
               <Badge badgeContent={4} color="error">
                 <MailIcon />
               </Badge>
-            </IconButton>
-            <IconButton
+            </IconButton> */}
+            {/* <IconButton
               size="large"
               aria-label="show 17 new notifications"
               color="inherit"
@@ -313,7 +314,7 @@ export default function PrimarySearchAppBar(props) {
               <Badge badgeContent={17} color="error">
                 <NotificationsIcon />
               </Badge>
-            </IconButton>
+            </IconButton> */}
             <IconButton
               size="large"
               edge="end"
