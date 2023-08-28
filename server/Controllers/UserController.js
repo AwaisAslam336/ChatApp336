@@ -4,7 +4,8 @@ const User = require("../Models/UserModel");
 const dayjs = require("dayjs");
 const fs = require("fs");
 const path = require("path");
-const { Console } = require("console");
+const { decode } = require("punycode");
+// const { Console } = require("console");
 async function registerUser(req, res) {
   try {
     const username = req.body.username;
@@ -30,7 +31,7 @@ async function registerUser(req, res) {
     });
 
     const AccessToken = generateAccessToken(data.email, data._id);
-    const RefreshToken = generateRefreshToken(data.email);
+    const RefreshToken = generateRefreshToken(data.email, data._id);
 
     res.cookie("secureCookie", RefreshToken, {
       secure: process.env.NODE_ENV !== "development",
@@ -77,7 +78,7 @@ async function loginUser(req, res) {
       return res.status(400).send("Email or Password is incorrect.");
     }
 
-    const RefreshToken = generateRefreshToken(isUser.email);
+    const RefreshToken = generateRefreshToken(isUser.email, isUser._id);
     const AccessToken = generateAccessToken(isUser.email, isUser._id);
 
     res.cookie("secureCookie", RefreshToken, {
@@ -107,45 +108,44 @@ async function loginUser(req, res) {
   }
 }
 
-async function getAccessToken(req, res) {
+async function getAccessToken(req) {
   const refreshToken = req.cookies?.secureCookie;
   if (!refreshToken) {
-    return res.status(401).send({ message: "Refresh Token Not Provided." });
+    return {};
   }
 
   const isUser = await User.findOne({ refreshToken: refreshToken });
   if (!isUser) {
-    return res.status(403).send({ message: "Refresh Token is Invalid." });
+    return {};
   }
+
+  let newAccessToken;
+  let newRefreshToken;
+  let newUser;
 
   jwt.verify(
     refreshToken,
     process.env.REFRESH_TOKEN_SECRET,
-    async (err, user) => {
+    async (err, decoded) => {
       if (err) {
-        return res.status(403).send({ message: "Refresh Token is Invalid." });
+        return {};
       }
-      const AccessToken = generateAccessToken(isUser.email, isUser._id);
-      const NewRefreshToken = generateRefreshToken(isUser.email);
-
-      res.cookie("secureCookie", NewRefreshToken, {
-        secure: process.env.NODE_ENV !== "development",
-        httpOnly: true,
-        sameSite: true,
-        expires: dayjs().add(7, "days").toDate(),
-      });
-
-      res.status(201).send({
-        result: "success",
-        AccessToken,
-      });
+      newAccessToken = generateAccessToken(isUser.email, isUser._id);
+      newRefreshToken = generateRefreshToken(isUser.email, isUser._id);
+      newUser = decoded;
 
       await User.findByIdAndUpdate(
         { _id: isUser._id },
-        { refreshToken: NewRefreshToken }
+        { refreshToken: newRefreshToken }
       );
     }
   );
+
+  if (newAccessToken && newRefreshToken && newUser) {
+    return { newAccessToken, newRefreshToken, newUser };
+  } else {
+    return {};
+  }
 }
 
 async function logoutUser(req, res) {
@@ -163,10 +163,10 @@ async function logoutUser(req, res) {
   return res.status(200).send("User Loged Out.");
 }
 
-function generateRefreshToken(email) {
+function generateRefreshToken(email, _id) {
   return jwt.sign(
     {
-      data: { email },
+      data: { email, _id },
     },
     process.env.REFRESH_TOKEN_SECRET,
     { expiresIn: "7d" }
@@ -179,7 +179,7 @@ function generateAccessToken(email, _id) {
       data: { email, _id },
     },
     process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: "1h" }
+    { expiresIn: "30m" }
   );
 }
 

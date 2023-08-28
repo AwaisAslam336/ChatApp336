@@ -25,7 +25,7 @@ const getAllMessages = async (req, res) => {
   const conversation_id = req.params?.conversation_id;
 
   if (!conversation_id) {
-    return res.status(400).send({ message: "Failed to get messages." });
+    res.status(400).send({ message: "Failed to get messages." });
   }
   try {
     const messages = await Message.find({ conversation_id });

@@ -18,6 +18,7 @@
 .DS_Store
 .env
 .env.local
+.vscode
 .env.development.local
 .env.test.local
 .env.production.local

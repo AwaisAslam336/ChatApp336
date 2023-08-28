@@ -100,6 +100,7 @@ function ChatPage() {
     axios({
       method: "get",
       url: "http://localhost:8000/api/conversation/get",
+      withCredentials: true,
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
@@ -130,7 +131,7 @@ function ChatPage() {
       //socket.emit("disconnect");
     } catch (error) {
       // setLoader(false);
-      setToastMessage(error?.response?.data);
+      setToastMessage("Unable to Logout");
       setToast(true);
     }
   };
@@ -147,21 +148,28 @@ function ChatPage() {
   const handleConversationClick = async (conversation) => {
     if (!conversation.conversation_id || !accessToken) return;
 
-    const messages = await axios({
-      method: "get",
-      url: `http://localhost:8000/api/message/get/${conversation.conversation_id}`,
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    try {
+      const messages = await axios({
+        method: "get",
+        url: `http://localhost:8000/api/message/get/${conversation.conversation_id}`,
+        withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
 
-    setAllMessages(messages.data);
-    setCurrentConversation(conversation);
-    socket.emit("join chat", conversation.conversation_id);
-    //reset msgs count
-    setMsgCount((msgs) => {
-      return { ...msgs, [conversation.conversation_id]: null };
-    });
+      setAllMessages(messages.data);
+      setCurrentConversation(conversation);
+      socket.emit("join chat", conversation.conversation_id);
+      //reset msgs count
+      setMsgCount((msgs) => {
+        return { ...msgs, [conversation.conversation_id]: null };
+      });
+    } catch (error) {
+      console.log(error);
+      setToastMessage("Token has been Expired!");
+      setToast(true);
+    }
   };
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -176,6 +184,7 @@ function ChatPage() {
           content: textMessage,
         },
         url: `http://localhost:8000/api/message/create`,
+        withCredentials: true,
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -219,9 +228,6 @@ function ChatPage() {
         handleProfile={handleUserProfile}
         refreshPage={refreshPage}
       />
-      {/* <button className="bg-blue-400 w-fit px-4 py-2 ml-4  rounded-md ">
-        
-      </button> */}
       <div
         onClick={handleBackBtn}
         className={`ml-3 m-2 p-1 pr-3 w-fit bg-blue-400 rounded-md hover:bg-blue-500 cursor-pointer ${
@@ -297,7 +303,7 @@ function ChatPage() {
                     <div>
                       <Box className="bg-blue-300 text-gray-900 rounded-lg p-2 m-2 w-fit float-right">
                         <text className="block font-semibold">you</text>
-                        <text>{msg.content}</text>
+                        <text>{msg?.content}</text>
                       </Box>
                     </div>
                   );
@@ -307,12 +313,12 @@ function ChatPage() {
                       <text className="block font-semibold">
                         {currentConversation?.member?.username}
                       </text>
-                      <text>{msg.content}</text>
+                      <text>{msg?.content}</text>
                     </Box>
                   );
                 }
               })}
-            <Box className="p-1 text-green-600">
+            <Box className="p-1 text-green-600 mt-auto">
               {receiverSideTyping ? "typing..." : ""}
             </Box>
           </Box>
