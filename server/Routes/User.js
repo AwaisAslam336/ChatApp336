@@ -5,7 +5,7 @@ const userRouter = express.Router();
 let {
   registerUser,
   loginUser,
-  //getAccessToken,
+  getAccessTokenOnRefresh,
   logoutUser,
   uploadProfilePicture,
   searchUsers,
@@ -25,7 +25,7 @@ const upload = multer({ storage: storage });
 userRouter.get("/", auth, searchUsers);
 userRouter.post("/register", registerUser);
 userRouter.post("/login", loginUser);
-//userRouter.get("/token", getAccessToken);
+userRouter.get("/token", getAccessTokenOnRefresh);
 userRouter.get("/logout", logoutUser);
 userRouter.post("/img", auth, upload.single("img"), uploadProfilePicture);
 

@@ -48,7 +48,7 @@ export default function LoginComponent() {
       try {
         setLoader(true);
         const result = await axios.post(
-          "http://localhost:8000/api/user/login",
+          `${process.env.REACT_APP_BASE_URL}/api/user/login`,
           userCredentials,
           { withCredentials: true }
         );

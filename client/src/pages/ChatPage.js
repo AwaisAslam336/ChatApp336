@@ -80,7 +80,7 @@ function ChatPage() {
     /* handling accessToken after page refresh */
     if (!accessToken) {
       axios
-        .get("http://localhost:8000/api/user/token", {
+        .get(`${process.env.REACT_APP_BASE_URL}/api/user/token`, {
           withCredentials: true,
         })
         .then((result) => {
@@ -99,7 +99,7 @@ function ChatPage() {
     }
     axios({
       method: "get",
-      url: "http://localhost:8000/api/conversation/get",
+      url: `${process.env.REACT_APP_BASE_URL}/api/conversation/get`,
       withCredentials: true,
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -124,7 +124,7 @@ function ChatPage() {
   const logout = async () => {
     //setLoader(true);
     try {
-      await axios.get("http://localhost:8000/api/user/logout", {
+      await axios.get(`${process.env.REACT_APP_BASE_URL}/api/user/logout`, {
         withCredentials: true,
       });
       navigate("/");
@@ -151,7 +151,7 @@ function ChatPage() {
     try {
       const messages = await axios({
         method: "get",
-        url: `http://localhost:8000/api/message/get/${conversation.conversation_id}`,
+        url: `${process.env.REACT_APP_BASE_URL}/api/message/get/${conversation.conversation_id}`,
         withCredentials: true,
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -183,7 +183,7 @@ function ChatPage() {
           conversation_id: currentConversation.conversation_id,
           content: textMessage,
         },
-        url: `http://localhost:8000/api/message/create`,
+        url: `${process.env.REACT_APP_BASE_URL}/api/message/create`,
         withCredentials: true,
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -262,7 +262,7 @@ function ChatPage() {
                 >
                   <Avatar
                     alt="Profile Picture"
-                    src={`http://localhost:8000/${conversation?.member?.pic}`}
+                    src={`${process.env.url}/${conversation?.member?.pic}`}
                     sx={{ width: 46, height: 46 }}
                   />
                   <Box className="flex flex-col ml-5 p-1 w-full">

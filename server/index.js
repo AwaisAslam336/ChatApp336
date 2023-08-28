@@ -7,6 +7,7 @@ const helmet = require("helmet");
 const { userRouter } = require("./Routes/User");
 const { conversationRouter } = require("./Routes/conversation");
 const { messageRouter } = require("./Routes/message");
+const path = require("path");
 
 const app = express();
 const port = 8000;
@@ -19,7 +20,8 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(express.static(__dirname + "/public/images"));
+app.use(express.static(__dirname + "/public"));
+app.use(express.static(__dirname + "/images"));
 
 const corsOptions = {
   origin: "http://localhost:3000",
@@ -32,6 +34,9 @@ app.use(cors(corsOptions));
 app.use("/api/user", userRouter);
 app.use("/api/conversation", conversationRouter);
 app.use("/api/message", messageRouter);
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 
 async function run() {
   try {

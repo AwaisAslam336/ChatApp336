@@ -148,6 +148,47 @@ async function getAccessToken(req) {
   }
 }
 
+async function getAccessTokenOnRefresh(req, res) {
+  const refreshToken = req.cookies?.secureCookie;
+  if (!refreshToken) {
+    return res.status(401).send({ message: "Refresh Token Not Provided." });
+  }
+
+  const isUser = await User.findOne({ refreshToken: refreshToken });
+  if (!isUser) {
+    return res.status(403).send({ message: "Refresh Token is Invalid." });
+  }
+
+  jwt.verify(
+    refreshToken,
+    process.env.REFRESH_TOKEN_SECRET,
+    async (err, user) => {
+      if (err) {
+        return res.status(403).send({ message: "Refresh Token is Invalid." });
+      }
+      const AccessToken = generateAccessToken(isUser.email, isUser._id);
+      const NewRefreshToken = generateRefreshToken(isUser.email);
+
+      res.cookie("secureCookie", NewRefreshToken, {
+        secure: process.env.NODE_ENV !== "development",
+        httpOnly: true,
+        sameSite: true,
+        expires: dayjs().add(7, "days").toDate(),
+      });
+
+      res.status(201).send({
+        result: "success",
+        AccessToken,
+      });
+
+      await User.findByIdAndUpdate(
+        { _id: isUser._id },
+        { refreshToken: NewRefreshToken }
+      );
+    }
+  );
+}
+
 async function logoutUser(req, res) {
   const refreshToken = req.cookies?.secureCookie;
   if (!refreshToken) {
@@ -234,6 +275,7 @@ module.exports = {
   registerUser,
   loginUser,
   getAccessToken,
+  getAccessTokenOnRefresh,
   logoutUser,
   uploadProfilePicture,
   searchUsers,

@@ -31,7 +31,7 @@ export default function ProfileDialogBox({ handleClose, open }) {
         data.append("img", img);
         const result = await axios({
           method: "post",
-          url: "http://localhost:8000/api/user/img",
+          url: `${process.env.REACT_APP_BASE_URL}/api/user/img`,
           data: data,
           headers: {
             "Content-Type": "multipart/form-data",
@@ -59,7 +59,7 @@ export default function ProfileDialogBox({ handleClose, open }) {
         <Box className="flex justify-center items-center p-2">
           <Avatar
             alt="Profile Picture"
-            src={`http://localhost:8000/${currentUser?.pic}`}
+            src={`${process.env.REACT_APP_BASE_URL}/${currentUser?.pic}`}
             key={Date.now()}
             sx={{ width: 56, height: 56 }}
           />

@@ -125,7 +125,7 @@ export default function PrimarySearchAppBar(props) {
     if (accessToken && user._id && currentUser._id) {
       try {
         const result = await axios.post(
-          `http://localhost:8000/api/conversation/create`,
+          `${process.env.REACT_APP_BASE_URL}/api/conversation/create`,
           [currentUser._id, user._id],
           { headers: { Authorization: `Bearer ${accessToken}` } },
           { withCredentials: true }
@@ -157,7 +157,7 @@ export default function PrimarySearchAppBar(props) {
       try {
         setLoader(true);
         const result = await axios.get(
-          `http://localhost:8000/api/user?search=${searchValue}`,
+          `${process.env.REACT_APP_BASE_URL}/api/user?search=${searchValue}`,
           { headers: { Authorization: `Bearer ${accessToken}` } },
           { withCredentials: true }
         );

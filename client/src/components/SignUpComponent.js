@@ -56,7 +56,7 @@ export default function SignUpComponent() {
       try {
         setLoader(true);
         const result = await axios.post(
-          "http://localhost:8000/api/user/register",
+          `${process.env.REACT_APP_BASE_URL}/api/user/register`,
           userCredentials,
           { withCredentials: true }
         );
