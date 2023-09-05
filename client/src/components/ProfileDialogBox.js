@@ -59,7 +59,7 @@ export default function ProfileDialogBox({ handleClose, open }) {
         <Box className="flex justify-center items-center p-2">
           <Avatar
             alt="Profile Picture"
-            src={`${process.env.REACT_APP_BASE_URL}/${currentUser?.pic}`}
+            src={`http://15.206.168.142:8000/${currentUser?.pic}`}
             key={Date.now()}
             sx={{ width: 56, height: 56 }}
           />

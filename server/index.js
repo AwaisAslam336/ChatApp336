@@ -3,38 +3,37 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const helmet = require("helmet");
-const { userRouter } = require("./Routes/User");
-const { conversationRouter } = require("./Routes/conversation");
-const { messageRouter } = require("./Routes/message");
+//const helmet = require("helmet");
+const { userRouter } = require("./Routes/User.js");
+const { conversationRouter } = require("./Routes/Conversation.js");
+const { messageRouter } = require("./Routes/Message.js");
 const path = require("path");
 
 const app = express();
 const port = 8000;
-let boolValue = process.env.HELMET_CROSS_ORIGIN === "true";
-app.use(
-  helmet({
-    crossOriginResourcePolicy: boolValue,
-  })
-);
+// let boolValue = process.env.HELMET_CROSS_ORIGIN === "true";
+// app.use(
+//   helmet({
+//     crossOriginResourcePolicy: boolValue,
+//   })
+// );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(express.static(__dirname + "/public"));
-app.use(express.static(__dirname + "/images"));
+app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "images")));
 
 const corsOptions = {
-  origin: "http://localhost:3000",
+  origin: ["*"],
   credentials: true, //access-control-allow-credentials:true
   optionSuccessStatus: 200,
 };
-
 app.use(cors(corsOptions));
 
 app.use("/api/user", userRouter);
 app.use("/api/conversation", conversationRouter);
 app.use("/api/message", messageRouter);
-app.get("*", (req, res) => {
+app.get("/*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
@@ -51,7 +50,7 @@ async function run() {
     const io = require("socket.io")(server, {
       pingTimeout: 60000,
       cors: {
-        origin: "http://localhost:3000",
+        origin: "*",
       },
     });
     io.on("connect", (socket) => {

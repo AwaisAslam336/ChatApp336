@@ -53,7 +53,7 @@ export default function SearchDialog({
                 <ListItemButton onClick={() => handleSelectedUser(user)}>
                   <Avatar
                     alt="Profile Picture"
-                    src={`${process.env.REACT_APP_BASE_URL}/${user.pic}`}
+                    src={`http://15.206.168.142:8000/${user.pic}`}
                     sx={{ width: "3rem", height: "3rem", marginRight: "1rem" }}
                   />
                   <ListItemText

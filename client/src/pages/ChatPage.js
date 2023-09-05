@@ -262,7 +262,7 @@ function ChatPage() {
                 >
                   <Avatar
                     alt="Profile Picture"
-                    src={`${process.env.url}/${conversation?.member?.pic}`}
+                    src={`http://15.206.168.142:8000/${conversation?.member?.pic}`}
                     sx={{ width: 46, height: 46 }}
                   />
                   <Box className="flex flex-col ml-5 p-1 w-full">
